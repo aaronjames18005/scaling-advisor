@@ -177,6 +177,18 @@ function generateComplianceChecks(project: any) {
       "Enable CloudTrail in all regions, deliver to an S3 bucket with strong bucket policies and S3 object lock.",
   });
 
+  // Add: Error handling and alerting for secret access failures
+  checks.push({
+    title: "Alert on Secrets Manager access errors",
+    description:
+      "Detect and alert on failed secret access attempts (e.g., AccessDenied, decryption failures) to fail fast and investigate.",
+    category: "secrets",
+    severity: "high",
+    standard: "cis-aws",
+    remediation:
+      "Create a CloudWatch Logs metric filter on CloudTrail for Secrets Manager events with errorCode and wire to an alarm (e.g., threshold >= 1 in 5m) with on-call notification. Ensure applications fail closed and log redacted error details.",
+  });
+
   return checks;
 }
 
@@ -242,9 +254,45 @@ function generateSecurityArtifacts(project: any) {
       `- Use SDK to fetch secrets at runtime; cache in memory with TTL.`,
       `- Fail closed if secret missing; do not run with defaults in prod.`,
       ``,
+      `## Error Handling for Secret Access`,
+      `- Treat all secret access as critical path and fail-closed on irrecoverable errors.`,
+      `- Implement bounded retries with exponential backoff and jitter for transient errors (throttling, timeouts).`,
+      `- Use strict timeouts (e.g., 2-5s) and limit total retry duration (e.g., <= 15s) to avoid startup stalls.`,
+      `- On final failure:`,
+      `  - Log a security-grade error (without leaking secret values),`,
+      `  - Emit a metric (e.g., counter: secrets.access.failures),`,
+      `  - Exit the process or mark the service unhealthy (liveness/readiness fail).`,
+      `- Never proceed with default/dev secrets in production.`,
+      `- Distinguish error categories:`,
+      `  - AuthN/Z (AccessDenied, InvalidSignature): do not retry, surface immediately.`,
+      `  - NotFound/DecryptionFailure/InvalidRequest: do not retry, surface immediately.`,
+      `  - Throttling/Timeout/Networking: retry with backoff (bounded).`,
+      ``,
+      `### Node.js (pseudo)`,
+      `- Pseudocode:`,
+      `  - try {`,
+      `      const secret = await client.getSecretValue({ SecretId }).withTimeout(5s);`,
+      `    } catch (e) {`,
+      `      if (e.code in ['AccessDeniedException','ResourceNotFoundException','DecryptionFailure','UnrecognizedClientException']) failFast(e);`,
+      `      if (e.code in ['ThrottlingException','TimeoutError','NetworkingError']) retryWithBackoff({ maxRetries: 3, baseMs: 300, jitter: true });`,
+      `      else failFast(e);`,
+      `    }`,
+      `  - If still failing after retries: emit metric, log redacted error, terminate.`,
+      ``,
+      `### Python (pseudo)`,
+      `- Similar categorization; use retries for throttling/timeouts only; otherwise fail fast.`,
+      ``,
       `## Access Controls`,
       `- Separate prod vs non-prod paths: /${nameSlug}/prod/*`,
       `- Limit decryption to app role and CI role only.`,
+      ``,
+      `## Observability`,
+      `- Emit metrics:`,
+      `  - secrets.access.success (counter)`,
+      `  - secrets.access.failure (counter, labeled by reason/category)`,
+      `  - secrets.access.latency_ms (histogram)`,
+      `- Integrate logs with correlation IDs and redact secret content.`,
+      `- Rely on CloudTrail + CloudWatch metric filters for Secrets Manager Get/Put events (see Terraform snippets).`,
     ].join("\n"),
   };
 
