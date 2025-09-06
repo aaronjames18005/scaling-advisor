@@ -9,7 +9,7 @@ import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Rocket, Sparkles, TrendingUp, Zap, Building2, Sun, Moon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -117,6 +117,90 @@ export default function NewProject() {
       scalingGoals: prev.scalingGoals.filter((_, i) => i !== index)
     }));
   };
+
+  const costEstimates = useMemo(() => {
+    // Basic multipliers inferred from phases
+    const phaseMultiplierMap: Record<string, number> = {
+      startup: 1,
+      growth: 2,
+      scale: 4,
+      enterprise: 8,
+    };
+    const stackBaselineMap: Record<string, number> = {
+      // Baseline (~$ per month) to approximate minimal app infra
+      mern: 80,
+      nextjs: 90,
+      django: 85,
+      flask: 70,
+      laravel: 75,
+      rails: 85,
+      spring: 110,
+      dotnet: 120,
+    };
+
+    const goalsFactor = Math.min(Math.max(formData.scalingGoals.length, 0), 10) * 0.05; // +5% per stated goal up to +50%
+    const currentPhaseMult = phaseMultiplierMap[formData.currentPhase || "startup"] ?? 1;
+    const targetPhaseMult = phaseMultiplierMap[formData.targetPhase || "startup"] ?? 1;
+
+    // Use target phase as primary driver, current as a floor
+    const phaseMult = Math.max(currentPhaseMult, targetPhaseMult);
+
+    const baseline =
+      stackBaselineMap[formData.techStack as keyof typeof stackBaselineMap] ?? 80;
+
+    // Heuristic adjustments based on tech stack characteristics
+    // e.g., JVM/.NET usually require larger instances, Node/Flask tend to be lighter
+    const stackLift =
+      formData.techStack === "spring" || formData.techStack === "dotnet" ? 1.25 :
+      formData.techStack === "rails" || formData.techStack === "django" ? 1.1 :
+      1.0;
+
+    // Derived monthly base before cloud vendor deltas
+    const derivedMonthly = baseline * stackLift * (1 + goalsFactor) * phaseMult;
+
+    // Cloud provider cost deltas (typical relative differences)
+    const vendorDelta = {
+      aws: 1.0,      // reference
+      gcp: 0.95,     // slightly cheaper for similar compute in many regions
+      azure: 1.05,   // slightly more in some workloads
+    };
+
+    // Add minimal bandwidth/storage estimates; scale with phase
+    const storageAndBandwidth = 20 * phaseMult; // $20 at startup, scales up
+
+    // Add managed DB/cache estimate
+    const managedServices =
+      (formData.currentInfra.toLowerCase().includes("redis") ? 25 : 0) +
+      (formData.currentInfra.toLowerCase().includes("postgres") ||
+      formData.currentInfra.toLowerCase().includes("mysql") ||
+      formData.currentInfra.toLowerCase().includes("mongodb")
+        ? 40
+        : 30); // assume some DB if not specified
+
+    const baseTotal = derivedMonthly + storageAndBandwidth + managedServices;
+
+    const breakdown = (vendor: "aws" | "gcp" | "azure") => {
+      const vendorMultiplier = vendorDelta[vendor];
+      const compute = (derivedMonthly * 0.7) * vendorMultiplier;   // 70% compute
+      const db = (derivedMonthly * 0.2 + managedServices) * vendorMultiplier; // 20% + managed services
+      const netStorage = (derivedMonthly * 0.1 + storageAndBandwidth) * vendorMultiplier; // 10% + sb
+      const total = Math.max(20, compute + db + netStorage); // guardrail
+      return {
+        total: Math.round(total),
+        items: [
+          { label: "Compute + Autoscaling", cost: Math.round(compute) },
+          { label: "Managed DB/Cache", cost: Math.round(db) },
+          { label: "Bandwidth + Storage", cost: Math.round(netStorage) },
+        ],
+      };
+    };
+
+    return {
+      aws: breakdown("aws"),
+      gcp: breakdown("gcp"),
+      azure: breakdown("azure"),
+    };
+  }, [formData]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -357,6 +441,59 @@ export default function NewProject() {
                       </Button>
                     </div>
                   ))}
+                </div>
+
+                {/* Infra Cost Estimation */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Infra Cost Estimation</Label>
+                    <span className="text-xs text-muted-foreground">
+                      Approximate monthly cost based on your inputs
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { key: "aws", name: "AWS" },
+                      { key: "gcp", name: "GCP" },
+                      { key: "azure", name: "Azure" },
+                    ].map((p) => {
+                      const data = costEstimates[p.key as keyof typeof costEstimates];
+                      return (
+                        <Card key={p.key} className="border bg-card/60">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex items-center justify-between">
+                              <span>{p.name}</span>
+                              <span className="text-primary text-lg font-semibold">
+                                ${data.total}/mo
+                              </span>
+                            </CardTitle>
+                            <CardDescription className="text-xs">
+                              Based on phase, stack, and goals
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            {data.items.map((line) => (
+                              <div
+                                key={line.label}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <span className="text-muted-foreground">
+                                  {line.label}
+                                </span>
+                                <span className="font-medium">${line.cost}</span>
+                              </div>
+                            ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Notes: This is a rough estimate using public pricing patterns and your selections.
+                    Actual costs vary by region, instance types, bandwidth, storage class, and discounts.
+                  </p>
                 </div>
 
                 {/* Submit Button */}
