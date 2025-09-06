@@ -19,6 +19,8 @@ import { useMutation } from "convex/react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Dashboard() {
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
@@ -26,6 +28,7 @@ export default function Dashboard() {
   const projects = useQuery(api.projects.list);
   const removeProject = useMutation(api.projects.remove);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteText, setConfirmDeleteText] = useState<string>("");
 
   const [navCreatingTop, setNavCreatingTop] = useState(false);
   const [navCreatingSection, setNavCreatingSection] = useState(false);
@@ -277,6 +280,7 @@ export default function Dashboard() {
                                 size="icon" 
                                 className="shrink-0"
                                 aria-label="Delete project"
+                                onClick={() => setConfirmDeleteText("")}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -288,6 +292,23 @@ export default function Dashboard() {
                                   This will permanently remove "{project.name}". This action cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
+
+                              <div className="space-y-2">
+                                <Label htmlFor={`confirm-${project._id}`} className="text-sm">
+                                  Type <span className="font-semibold">DELETE</span> to confirm
+                                </Label>
+                                <Input
+                                  id={`confirm-${project._id}`}
+                                  placeholder="DELETE"
+                                  value={confirmDeleteText}
+                                  onChange={(e) => setConfirmDeleteText(e.target.value)}
+                                  autoComplete="off"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  This extra confirmation helps prevent accidental deletions.
+                                </p>
+                              </div>
+
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
@@ -302,9 +323,10 @@ export default function Dashboard() {
                                       toast.error("Failed to delete project");
                                     } finally {
                                       setDeletingId(null);
+                                      setConfirmDeleteText("");
                                     }
                                   }}
-                                  disabled={deletingId === project._id}
+                                  disabled={deletingId === project._id || confirmDeleteText !== "DELETE"}
                                 >
                                   {deletingId === project._id ? (
                                     <>
