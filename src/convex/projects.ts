@@ -32,56 +32,72 @@ export const create = mutation({
     scalingGoals: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User must be authenticated");
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
+
+      const projectId = await ctx.db.insert("projects", {
+        userId: user._id,
+        name: args.name,
+        description: args.description,
+        techStack: args.techStack,
+        currentPhase: args.currentPhase,
+        targetPhase: args.targetPhase,
+        currentInfra: args.currentInfra,
+        scalingGoals: args.scalingGoals,
+        status: "active",
+      });
+
+      return projectId;
+    } catch (err) {
+      console.error("projects.create error", { args, err });
+      throw new Error("Failed to create project. Please try again.");
     }
-
-    const projectId = await ctx.db.insert("projects", {
-      userId: user._id,
-      name: args.name,
-      description: args.description,
-      techStack: args.techStack,
-      currentPhase: args.currentPhase,
-      targetPhase: args.targetPhase,
-      currentInfra: args.currentInfra,
-      scalingGoals: args.scalingGoals,
-      status: "active",
-    });
-
-    return projectId;
   },
 });
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        return [];
+      }
+
+      return await ctx.db
+        .query("projects")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+    } catch (err) {
+      console.error("projects.list error", { err });
+      // Return an empty array to avoid breaking consumers
       return [];
     }
-
-    return await ctx.db
-      .query("projects")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
   },
 });
 
 export const get = query({
   args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User must be authenticated");
-    }
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
 
-    const project = await ctx.db.get(args.id);
-    if (!project || project.userId !== user._id) {
-      throw new Error("Project not found or access denied");
-    }
+      const project = await ctx.db.get(args.id);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Project not found or access denied");
+      }
 
-    return project;
+      return project;
+    } catch (err) {
+      console.error("projects.get error", { args, err });
+      throw new Error("Failed to load project.");
+    }
   },
 });
 
@@ -93,38 +109,48 @@ export const update = mutation({
     status: v.optional(v.union(v.literal("active"), v.literal("completed"), v.literal("archived"))),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User must be authenticated");
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
+
+      const project = await ctx.db.get(args.id);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Project not found or access denied");
+      }
+
+      const updates: any = {};
+      if (args.name !== undefined) updates.name = args.name;
+      if (args.description !== undefined) updates.description = args.description;
+      if (args.status !== undefined) updates.status = args.status;
+
+      await ctx.db.patch(args.id, updates);
+    } catch (err) {
+      console.error("projects.update error", { args, err });
+      throw new Error("Failed to update project.");
     }
-
-    const project = await ctx.db.get(args.id);
-    if (!project || project.userId !== user._id) {
-      throw new Error("Project not found or access denied");
-    }
-
-    const updates: any = {};
-    if (args.name !== undefined) updates.name = args.name;
-    if (args.description !== undefined) updates.description = args.description;
-    if (args.status !== undefined) updates.status = args.status;
-
-    await ctx.db.patch(args.id, updates);
   },
 });
 
 export const remove = mutation({
   args: { id: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User must be authenticated");
-    }
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
 
-    const project = await ctx.db.get(args.id);
-    if (!project || project.userId !== user._id) {
-      throw new Error("Project not found or access denied");
-    }
+      const project = await ctx.db.get(args.id);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Project not found or access denied");
+      }
 
-    await ctx.db.delete(args.id);
+      await ctx.db.delete(args.id);
+    } catch (err) {
+      console.error("projects.remove error", { args, err });
+      throw new Error("Failed to delete project.");
+    }
   },
 });

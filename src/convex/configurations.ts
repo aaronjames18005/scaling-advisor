@@ -14,41 +14,45 @@ export const generate = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User must be authenticated");
-    }
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
 
-    const project = await ctx.db.get(args.projectId);
-    if (!project || project.userId !== user._id) {
-      throw new Error("Project not found or access denied");
-    }
+      const project = await ctx.db.get(args.projectId);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Project not found or access denied");
+      }
 
-    // Generate configuration based on type and project details
-    const config = generateConfiguration(project, args.type);
-    
-    // Check if configuration already exists
-    const existing = await ctx.db
-      .query("configurations")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-      .filter((q) => q.eq(q.field("type"), args.type))
-      .first();
+      const config = generateConfiguration(project, args.type);
 
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        content: config.content,
-        name: config.name,
-        description: config.description,
-      });
-      return existing._id;
-    } else {
-      return await ctx.db.insert("configurations", {
-        projectId: args.projectId,
-        type: args.type,
-        name: config.name,
-        content: config.content,
-        description: config.description,
-      });
+      // Note: Using withIndex + filter; keeping behavior, improving safety with try/catch
+      const existing = await ctx.db
+        .query("configurations")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .filter((q) => q.eq(q.field("type"), args.type))
+        .first();
+
+      if (existing) {
+        await ctx.db.patch(existing._id, {
+          content: config.content,
+          name: config.name,
+          description: config.description,
+        });
+        return existing._id;
+      } else {
+        return await ctx.db.insert("configurations", {
+          projectId: args.projectId,
+          type: args.type,
+          name: config.name,
+          content: config.content,
+          description: config.description,
+        });
+      }
+    } catch (err) {
+      console.error("configurations.generate error", { args, err });
+      throw new Error("Failed to generate configuration.");
     }
   },
 });
@@ -56,20 +60,25 @@ export const generate = mutation({
 export const listByProject = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        return [];
+      }
+
+      const project = await ctx.db.get(args.projectId);
+      if (!project || project.userId !== user._id) {
+        return [];
+      }
+
+      return await ctx.db
+        .query("configurations")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .collect();
+    } catch (err) {
+      console.error("configurations.listByProject error", { args, err });
       return [];
     }
-
-    const project = await ctx.db.get(args.projectId);
-    if (!project || project.userId !== user._id) {
-      return [];
-    }
-
-    return await ctx.db
-      .query("configurations")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-      .collect();
   },
 });
 

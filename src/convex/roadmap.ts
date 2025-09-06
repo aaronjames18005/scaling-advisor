@@ -5,35 +5,38 @@ import { getCurrentUser } from "./users";
 export const generateForProject = mutation({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User must be authenticated");
-    }
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
 
-    const project = await ctx.db.get(args.projectId);
-    if (!project || project.userId !== user._id) {
-      throw new Error("Project not found or access denied");
-    }
+      const project = await ctx.db.get(args.projectId);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Project not found or access denied");
+      }
 
-    // Clear existing roadmap steps
-    const existingSteps = await ctx.db
-      .query("roadmapSteps")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-      .collect();
-    
-    for (const step of existingSteps) {
-      await ctx.db.delete(step._id);
-    }
+      const existingSteps = await ctx.db
+        .query("roadmapSteps")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .collect();
 
-    // Generate new roadmap steps
-    const steps = generateRoadmapSteps(project);
-    
-    for (const step of steps) {
-      await ctx.db.insert("roadmapSteps", {
-        projectId: args.projectId,
-        ...step,
-        isCompleted: false,
-      });
+      for (const step of existingSteps) {
+        await ctx.db.delete(step._id);
+      }
+
+      const steps = generateRoadmapSteps(project);
+
+      for (const step of steps) {
+        await ctx.db.insert("roadmapSteps", {
+          projectId: args.projectId,
+          ...step,
+          isCompleted: false,
+        });
+      }
+    } catch (err) {
+      console.error("roadmap.generateForProject error", { args, err });
+      throw new Error("Failed to generate roadmap.");
     }
   },
 });
@@ -41,44 +44,54 @@ export const generateForProject = mutation({
 export const listByProject = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        return [];
+      }
+
+      const project = await ctx.db.get(args.projectId);
+      if (!project || project.userId !== user._id) {
+        return [];
+      }
+
+      return await ctx.db
+        .query("roadmapSteps")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .collect();
+    } catch (err) {
+      console.error("roadmap.listByProject error", { args, err });
       return [];
     }
-
-    const project = await ctx.db.get(args.projectId);
-    if (!project || project.userId !== user._id) {
-      return [];
-    }
-
-    return await ctx.db
-      .query("roadmapSteps")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-      .collect();
   },
 });
 
 export const toggleComplete = mutation({
   args: { id: v.id("roadmapSteps") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User must be authenticated");
-    }
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
 
-    const step = await ctx.db.get(args.id);
-    if (!step) {
-      throw new Error("Roadmap step not found");
-    }
+      const step = await ctx.db.get(args.id);
+      if (!step) {
+        throw new Error("Roadmap step not found");
+      }
 
-    const project = await ctx.db.get(step.projectId);
-    if (!project || project.userId !== user._id) {
-      throw new Error("Access denied");
-    }
+      const project = await ctx.db.get(step.projectId);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Access denied");
+      }
 
-    await ctx.db.patch(args.id, {
-      isCompleted: !step.isCompleted,
-    });
+      await ctx.db.patch(args.id, {
+        isCompleted: !step.isCompleted,
+      });
+    } catch (err) {
+      console.error("roadmap.toggleComplete error", { args, err });
+      throw new Error("Failed to update roadmap step.");
+    }
   },
 });
 
