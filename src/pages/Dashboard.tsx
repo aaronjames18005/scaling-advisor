@@ -15,11 +15,17 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
+import { useMutation } from "convex/react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const projects = useQuery(api.projects.list);
+  const removeProject = useMutation(api.projects.remove);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [navCreatingTop, setNavCreatingTop] = useState(false);
   const [navCreatingSection, setNavCreatingSection] = useState(false);
@@ -240,26 +246,79 @@ export default function Dashboard() {
                             {project.currentPhase} → {project.targetPhase}
                           </span>
                         </div>
-                        <Button 
-                          className="w-full mt-4 group-hover:glow-primary"
-                          onClick={() => {
-                            setViewingProjectId(project._id);
-                            navigate(`/projects/${project._id}`);
-                          }}
-                          disabled={viewingProjectId === project._id}
-                        >
-                          {viewingProjectId === project._id ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Opening...
-                            </>
-                          ) : (
-                            <>
-                              View Project
-                              <ArrowRight className="ml-2 h-4 w-4" />
-                            </>
-                          )}
-                        </Button>
+
+                        {/* Actions */}
+                        <div className="mt-4 flex gap-2">
+                          <Button 
+                            className="flex-1 group-hover:glow-primary"
+                            onClick={() => {
+                              setViewingProjectId(project._id);
+                              navigate(`/projects/${project._id}`);
+                            }}
+                            disabled={viewingProjectId === project._id}
+                          >
+                            {viewingProjectId === project._id ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Opening...
+                              </>
+                            ) : (
+                              <>
+                                View Project
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                              </>
+                            )}
+                          </Button>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="shrink-0"
+                                aria-label="Delete project"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove "{project.name}". This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={async () => {
+                                    try {
+                                      setDeletingId(project._id);
+                                      await removeProject({ id: project._id });
+                                      toast.success("Project deleted");
+                                    } catch (err) {
+                                      console.error("Delete project error", err);
+                                      toast.error("Failed to delete project");
+                                    } finally {
+                                      setDeletingId(null);
+                                    }
+                                  }}
+                                  disabled={deletingId === project._id}
+                                >
+                                  {deletingId === project._id ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Deleting...
+                                    </>
+                                  ) : (
+                                    "Delete"
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
