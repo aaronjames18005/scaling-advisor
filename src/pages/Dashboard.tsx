@@ -17,22 +17,31 @@ import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Shield } from "lucide-react";
 
 export default function Dashboard() {
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const projects = useQuery(api.projects.list);
   const removeProject = useMutation(api.projects.remove);
+  const runSecurityAdvisor = useMutation(api.security.generateForProject);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteText, setConfirmDeleteText] = useState<string>("");
 
   const [navCreatingTop, setNavCreatingTop] = useState(false);
   const [navCreatingSection, setNavCreatingSection] = useState(false);
   const [viewingProjectId, setViewingProjectId] = useState<string | null>(null);
+  const [securityProjectId, setSecurityProjectId] = useState<string | null>(null);
+  const [runningSecurityId, setRunningSecurityId] = useState<string | null>(null);
+  const compliance = useQuery(
+    api.security.listComplianceByProject,
+    securityProjectId ? { projectId: securityProjectId as any } : "skip"
+  );
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -272,6 +281,119 @@ export default function Dashboard() {
                               </>
                             )}
                           </Button>
+
+                          {/* Security Advisor trigger */}
+                          <Dialog
+                            open={securityProjectId === project._id}
+                            onOpenChange={(open) => {
+                              if (!open) setSecurityProjectId(null);
+                              else setSecurityProjectId(project._id);
+                            }}
+                          >
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label="Security Advisor"
+                                onClick={() => setSecurityProjectId(project._id)}
+                                disabled={runningSecurityId === project._id}
+                              >
+                                {runningSecurityId === project._id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Shield className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Security Advisor</DialogTitle>
+                                <DialogDescription>
+                                  Generate security artifacts and review CIS-based checks.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  onClick={async () => {
+                                    try {
+                                      setRunningSecurityId(project._id);
+                                      await runSecurityAdvisor({ projectId: project._id });
+                                      toast.success("Security artifacts generated and checks refreshed");
+                                    } catch (e) {
+                                      console.error("security.generate error", e);
+                                      toast.error("Failed to run Security Advisor");
+                                    } finally {
+                                      setRunningSecurityId(null);
+                                    }
+                                  }}
+                                  disabled={runningSecurityId === project._id}
+                                  className="glow-primary"
+                                >
+                                  {runningSecurityId === project._id ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Running...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Shield className="mr-2 h-4 w-4" />
+                                      Run Advisor
+                                    </>
+                                  )}
+                                </Button>
+                                <span className="text-xs text-muted-foreground">
+                                  Creates CIS-aligned Terraform snippets, IAM least-privilege scaffold, and a secrets policy.
+                                </span>
+                              </div>
+                              <div className="mt-4 space-y-3">
+                                <h4 className="font-semibold">Compliance Checks</h4>
+                                {compliance === undefined ? (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Loading checks...
+                                  </div>
+                                ) : compliance.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground">
+                                    No checks yet. Run the advisor to generate them.
+                                  </p>
+                                ) : (
+                                  <div className="space-y-2 max-h-80 overflow-auto pr-1">
+                                    {compliance.map((c: any) => (
+                                      <div
+                                        key={c._id}
+                                        className="rounded-md border p-3 bg-card/60 flex flex-col gap-1"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-medium">{c.title}</span>
+                                          <span className={`text-xs px-2 py-0.5 rounded ${
+                                            c.severity === "high"
+                                              ? "bg-destructive/10 text-destructive"
+                                              : c.severity === "medium"
+                                              ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+                                              : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                          }`}>
+                                            {c.severity}
+                                          </span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">{c.description}</p>
+                                        <div className="flex items-center gap-2 text-xs">
+                                          <span className="rounded bg-primary/10 text-primary px-2 py-0.5">
+                                            {c.category}
+                                          </span>
+                                          <span className="rounded bg-accent/10 text-accent px-2 py-0.5">
+                                            {c.standard}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Remediation: {c.remediation}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
 
                           <AlertDialog>
                             <AlertDialogTrigger asChild>

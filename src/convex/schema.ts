@@ -103,7 +103,11 @@ const schema = defineSchema(
         v.literal("kubernetes"),
         v.literal("terraform"),
         v.literal("github-actions"),
-        v.literal("docker-compose")
+        v.literal("docker-compose"),
+        // Add security advisor generated artifacts
+        v.literal("iam-policy"),
+        v.literal("secrets-management"),
+        v.literal("terraform-cis")
       ),
       name: v.string(),
       content: v.string(), // The actual configuration content
@@ -139,6 +143,18 @@ const schema = defineSchema(
         url: v.string(),
         type: v.union(v.literal("documentation"), v.literal("tutorial"), v.literal("tool"))
       })),
+    }).index("by_project", ["projectId"]),
+
+    // Compliance checks (Security Advisor)
+    complianceChecks: defineTable({
+      projectId: v.id("projects"),
+      title: v.string(),
+      description: v.string(),
+      category: v.string(), // e.g., "iam", "secrets", "networking", "kubernetes"
+      severity: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+      standard: v.string(), // e.g., "cis-aws", "cis-k8s"
+      remediation: v.string(),
+      isPassed: v.boolean(),
     }).index("by_project", ["projectId"]),
   },
   {
