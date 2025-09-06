@@ -246,8 +246,7 @@ spec:
 }
 
 function generateTerraform(project: any) {
-  const nameSlug = project.name.toLowerCase().replace(/\s+/g, "-");
-
+  const slug = project.name.toLowerCase().replace(/\s+/g, '-');
   const content = `# Terraform configuration for ${project.name}
 terraform {
   required_version = ">= 1.0"
@@ -282,7 +281,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-vpc"
+    Name        = "${slug}-vpc"
     Environment = var.environment
   }
 }
@@ -292,7 +291,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-igw"
+    Name        = "${slug}-igw"
     Environment = var.environment
   }
 }
@@ -307,7 +306,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-public-\${count.index + 1}"
+    Name        = "${slug}-public-\${count.index + 1}"
     Environment = var.environment
   }
 }
@@ -326,7 +325,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-public-rt"
+    Name        = "${slug}-public-rt"
     Environment = var.environment
   }
 }
@@ -339,7 +338,7 @@ resource "aws_route_table_association" "public" {
 
 # Security Group
 resource "aws_security_group" "app" {
-  name_prefix = "${project.name.toLowerCase().replace(/\s+/g, '-')}-"
+  name_prefix = "${slug}-"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -364,21 +363,21 @@ resource "aws_security_group" "app" {
   }
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-sg"
+    Name        = "${slug}-sg"
     Environment = var.environment
   }
 }
 
 # Application Load Balancer
 resource "aws_lb" "main" {
-  name               = "${project.name.toLowerCase().replace(/\s+/g, '-')}-alb"
+  name               = "${slug}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.app.id]
   subnets            = aws_subnet.public[*].id
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-alb"
+    Name        = "${slug}-alb"
     Environment = var.environment
   }
 }
@@ -388,88 +387,189 @@ output "load_balancer_dns" {
   value       = aws_lb.main.dns_name
 }
 
-# -----------------------------------------------------------------------------
-# Secrets management (KMS + AWS Secrets Manager)
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------
+# Secrets Management (AWS Secrets Manager + KMS) - Least Privilege
+# -------------------------------------------------------------------
 
 # KMS key for encrypting secrets
 resource "aws_kms_key" "secrets" {
-  description             = "${project.name} secrets KMS key"
-  deletion_window_in_days = 30
+  description             = "${slug} secrets encryption key"
+  deletion_window_in_days = 7
   enable_key_rotation     = true
+
   tags = {
-    Name     = "${nameSlug}-secrets-kms"
-    Standard = "cis-aws"
+    Name        = "${slug}-secrets-kms"
+    Environment = var.environment
   }
 }
 
-# Optional: Alias for the KMS key
-resource "aws_kms_alias" "secrets" {
-  name          = "alias/${nameSlug}-secrets"
-  target_key_id = aws_kms_key.secrets.id
-}
-
-# Secrets Manager secret (logical)
+# Secrets Manager secret container
 resource "aws_secretsmanager_secret" "app" {
-  name        = "${nameSlug}/prod/app"
-  description = "Application secrets for ${project.name} (prod)"
-  kms_key_id  = aws_kms_key.secrets.arn
+  name       = "${slug}/\${var.environment}/app"
+  kms_key_id = aws_kms_key.secrets.arn
+
   tags = {
-    Name     = "${nameSlug}-app-secret"
-    Standard = "cis-aws"
+    Name        = "${slug}-app-secret"
+    Environment = var.environment
   }
 }
 
-# Initial secret value (rotate via CI or periodic rotation)
-resource "aws_secretsmanager_secret_version" "app_initial" {
+# Initial secret version (example payload; replace with CI-injected values)
+resource "aws_secretsmanager_secret_version" "app" {
   secret_id     = aws_secretsmanager_secret.app.id
   secret_string = jsonencode({
-    DATABASE_URL = "postgres://user:pass@host:5432/db"
-    REDIS_URL    = "redis://host:6379"
-    JWT_SECRET   = "CHANGE_ME"
+    DATABASE_URL = "postgresql://user:password@host:5432/${slug}"
+    API_KEY      = "change-me"
   })
 }
 
-# Least-privilege policy to read the secret and decrypt via KMS
-data "aws_iam_policy_document" "app_read_secret" {
-  statement {
-    sid     = "AllowReadAppSecret"
-    effect  = "Allow"
-    actions = [
-      "secretsmanager:GetSecretValue",
-      "secretsmanager:DescribeSecret"
+# IAM policy granting read access to only this secret
+resource "aws_iam_policy" "app_secrets_read" {
+  name   = "${slug}-secrets-read"
+  path   = "/"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AppSecretsReadOnly"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [aws_secretsmanager_secret.app.Arn]
+      }
     ]
-    resources = [aws_secretsmanager_secret.app.arn]
-  }
-  statement {
-    sid     = "AllowDecryptKMS"
-    effect  = "Allow"
-    actions = ["kms:Decrypt"]
-    resources = [aws_kms_key.secrets.arn]
-  }
+  })
 }
 
-resource "aws_iam_policy" "app_read_secret" {
-  name   = "${nameSlug}-read-secret"
-  policy = data.aws_iam_policy_document.app_read_secret.json
-}
-
-# Optional: Attach the policy to your app role
-# resource "aws_iam_role_policy_attachment" "app_secret_attach" {
-#   role       = aws_iam_role.app.name
-#   policy_arn = aws_iam_policy.app_read_secret.arn
+# Note: Attach the policy above to your app/compute role (ECS task role, EKS service account via IRSA, EC2 instance profile, etc.)
+# Example (uncomment and bind to your role ARN):
+# resource "aws_iam_role_policy_attachment" "app_secrets_read_attach" {
+#   role       = aws_iam_role.app_role.name
+#   policy_arn = aws_iam_policy.app_secrets_read.arn
 # }
 
-# Notes:
-# - Rotate secrets regularly (e.g., every 90 days).
-# - Use separate paths for environments: /${nameSlug}/staging/*, /${nameSlug}/prod/*
-# - Attach the read policy only to the app execution role and CI role.
+# -------------------------------------------------------------------
+# CloudTrail + CloudWatch logging for secret access auditing
+# -------------------------------------------------------------------
+
+# CloudWatch log group for CloudTrail
+resource "aws_cloudwatch_log_group" "cloudtrail" {
+  name              = "/aws/cloudtrail/${slug}"
+  retention_in_days = 90
+
+  tags = {
+    Name        = "${slug}-cloudtrail-logs"
+    Environment = var.environment
+  }
+}
+
+# IAM role for CloudTrail to publish logs to CloudWatch
+data "aws_iam_policy_document" "cloudtrail_assume_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["cloudtrail.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "cloudtrail" {
+  name               = "${slug}-cloudtrail-role"
+  assume_role_policy = data.aws_iam_policy_document.cloudtrail_assume_role.json
+  tags = {
+    Name        = "${slug}-cloudtrail-role"
+    Environment = var.environment
+  }
+}
+
+# Policy allowing CloudTrail to write to CloudWatch Logs
+data "aws_iam_policy_document" "cloudtrail_to_cwlogs" {
+  statement {
+    sid     = "AllowWriteCWLogs"
+    effect  = "Allow"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = ["\${aws_cloudwatch_log_group.cloudtrail.arn}:*"]
+  }
+}
+
+resource "aws_iam_role_policy" "cloudtrail_to_cwlogs" {
+  name   = "${slug}-cloudtrail-to-cwlogs"
+  role   = aws_iam_role.cloudtrail.id
+  policy = data.aws_iam_policy_document.cloudtrail_to_cwlogs.json
+}
+
+# CloudTrail capturing management events, integrated with CW Logs and encrypted by KMS
+resource "aws_cloudtrail" "main" {
+  name                          = "${slug}-trail"
+  s3_bucket_name                = aws_s3_bucket.logs.id
+  include_global_service_events = true
+  is_multi_region_trail         = true
+  enable_log_file_validation    = true
+
+  # Encrypt trail logs (optional but recommended)
+  kms_key_id = aws_kms_key.secrets.arn
+
+  cloud_watch_logs_group_arn = aws_cloudwatch_log_group.cloudtrail.arn
+  cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail.arn
+
+  event_selector {
+    read_write_type           = "All"
+    include_management_events = true
+  }
+
+  tags = {
+    Name        = "${slug}-trail"
+    Environment = var.environment
+  }
+}
+
+# Metric filter for Secrets Manager access (GetSecretValue / PutSecretValue)
+resource "aws_cloudwatch_log_metric_filter" "secrets_access" {
+  name           = "${slug}-secrets-access"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventSource = \"secretsmanager.amazonaws.com\") && (($.eventName = \"GetSecretValue\") || ($.eventName = \"PutSecretValue\")) }"
+
+  metric_transformation {
+    name      = "${slug}-secrets-access-count"
+    namespace = "Security"
+    value     = "1"
+  }
+}
+
+# Example alarm: spike in secret access events
+resource "aws_cloudwatch_metric_alarm" "secrets_access_spike" {
+  alarm_name          = "${slug}-secrets-access-spike"
+  alarm_description   = "Alerts on spikes of Secrets Manager access events (Get/PutSecretValue)."
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  threshold           = 20
+  metric_name         = aws_cloudwatch_log_metric_filter.secrets_access.metric_transformation[0].name
+  namespace           = aws_cloudwatch_log_metric_filter.secrets_access.metric_transformation[0].namespace
+  period              = 300
+  statistic           = "Sum"
+
+  # Add SNS topics as needed
+  # alarm_actions = [aws_sns_topic.security_alerts.arn]
+  # ok_actions    = [aws_sns_topic.security_alerts.arn]
+
+  tags = {
+    Name        = "${slug}-secrets-access-spike"
+    Environment = var.environment
+  }
+}
 `;
 
   return {
     name: "main.tf",
     content,
-    description: `Terraform infrastructure configuration for ${project.name}`,
+    description: `Terraform infrastructure configuration (with Secrets Manager + KMS + CloudTrail/CW logs for ${project.name})`,
   };
 }
 
