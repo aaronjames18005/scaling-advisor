@@ -72,7 +72,7 @@ export default function Dashboard() {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="mb-8"
+          className="mb-8 p-6 rounded-xl gradient-primary glow-primary"
         >
           <h1 className="text-4xl font-bold tracking-tight mb-2">
             Your Scaling Dashboard
@@ -89,7 +89,7 @@ export default function Dashboard() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
         >
-          <Card className="glass">
+          <Card className="glass gradient-primary glow-primary">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
               <BarChart3 className="h-4 w-4 text-primary" />
@@ -102,7 +102,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass">
+          <Card className="glass gradient-accent glow-accent">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Completed</CardTitle>
               <CheckCircle2 className="h-4 w-4 text-accent" />
@@ -115,7 +115,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass">
+          <Card className="glass gradient-primary glow-ring">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
               <Clock className="h-4 w-4 text-ring" />
@@ -134,6 +134,7 @@ export default function Dashboard() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
+          className="rounded-xl p-6 gradient-accent"
         >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold tracking-tight">Your Projects</h2>
