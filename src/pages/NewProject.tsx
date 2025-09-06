@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Rocket, Sparkles, TrendingUp, Zap, Building2 } from "lucide-react";
+import { ArrowLeft, Loader2, Rocket, Sparkles, TrendingUp, Zap, Building2, Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -28,6 +28,26 @@ export default function NewProject() {
     currentInfra: "",
     scalingGoals: [] as string[],
   });
+
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark((prev) => !prev);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -120,6 +140,19 @@ export default function NewProject() {
                 </div>
                 <span className="text-xl font-bold tracking-tight">ScaleAdvisor</span>
               </div>
+            </div>
+
+            <div className="ml-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                onClick={toggleTheme}
+                className="glow-primary"
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
         </div>
