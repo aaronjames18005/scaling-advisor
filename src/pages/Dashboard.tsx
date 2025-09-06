@@ -46,7 +46,7 @@ export default function Dashboard() {
       {/* Navigation */}
       <nav className="border-b border-border/50 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex flex-wrap md:flex-nowrap justify-between items-center gap-3 h-auto md:h-16 py-3 md:py-0">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
               <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
                 <Rocket className="h-5 w-5 text-background" />
@@ -54,13 +54,18 @@ export default function Dashboard() {
               <span className="text-xl font-bold tracking-tight">ScaleAdvisor</span>
             </div>
             
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 ml-auto">
+              <span className="hidden md:inline text-sm text-muted-foreground">
                 Welcome back, {user?.name || "Developer"}
               </span>
-              <Button onClick={() => navigate("/projects/new")} className="glow-primary">
+              {/* Desktop/Tablet CTA */}
+              <Button onClick={() => navigate("/projects/new")} className="glow-primary hidden md:inline-flex">
                 <Plus className="h-4 w-4 mr-2" />
                 New Project
+              </Button>
+              {/* Mobile CTA (icon only) */}
+              <Button onClick={() => navigate("/projects/new")} size="icon" className="glow-primary md:hidden">
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
