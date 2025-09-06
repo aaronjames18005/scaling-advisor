@@ -14,12 +14,16 @@ import {
   Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const projects = useQuery(api.projects.list);
+
+  const [navCreatingTop, setNavCreatingTop] = useState(false);
+  const [navCreatingSection, setNavCreatingSection] = useState(false);
+  const [viewingProjectId, setViewingProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -59,13 +63,41 @@ export default function Dashboard() {
                 Welcome back, {user?.name || "Developer"}
               </span>
               {/* Desktop/Tablet CTA */}
-              <Button onClick={() => navigate("/projects/new")} className="glow-primary hidden md:inline-flex">
-                <Plus className="h-4 w-4 mr-2" />
-                New Project
+              <Button
+                onClick={() => {
+                  setNavCreatingTop(true);
+                  navigate("/projects/new");
+                }}
+                className="glow-primary hidden md:inline-flex"
+                disabled={navCreatingTop}
+              >
+                {navCreatingTop ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Opening...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Project
+                  </>
+                )}
               </Button>
               {/* Mobile CTA (icon only) */}
-              <Button onClick={() => navigate("/projects/new")} size="icon" className="glow-primary md:hidden">
-                <Plus className="h-4 w-4" />
+              <Button
+                onClick={() => {
+                  setNavCreatingTop(true);
+                  navigate("/projects/new");
+                }}
+                size="icon"
+                className="glow-primary md:hidden"
+                disabled={navCreatingTop}
+              >
+                {navCreatingTop ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -143,32 +175,29 @@ export default function Dashboard() {
         >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold tracking-tight">Your Projects</h2>
-            <Button onClick={() => navigate("/projects/new")} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Project
+            <Button
+              onClick={() => {
+                setNavCreatingSection(true);
+                navigate("/projects/new");
+              }}
+              variant="outline"
+              disabled={navCreatingSection}
+            >
+              {navCreatingSection ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Opening...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Project
+                </>
+              )}
             </Button>
           </div>
 
-          {projects === undefined ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : projects.length === 0 ? (
-            <Card className="glass">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Rocket className="h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No projects yet</h3>
-                <p className="text-muted-foreground text-center mb-6 max-w-md">
-                  Create your first project to get personalized scaling recommendations 
-                  and start your journey to enterprise-grade infrastructure.
-                </p>
-                <Button onClick={() => navigate("/projects/new")} className="glow-primary">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Project
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
+          {projects !== undefined && projects.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((project, index) => (
                 <motion.div
@@ -213,10 +242,23 @@ export default function Dashboard() {
                         </div>
                         <Button 
                           className="w-full mt-4 group-hover:glow-primary"
-                          onClick={() => navigate(`/projects/${project._id}`)}
+                          onClick={() => {
+                            setViewingProjectId(project._id);
+                            navigate(`/projects/${project._id}`);
+                          }}
+                          disabled={viewingProjectId === project._id}
                         >
-                          View Project
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          {viewingProjectId === project._id ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Opening...
+                            </>
+                          ) : (
+                            <>
+                              View Project
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </>
+                          )}
                         </Button>
                       </div>
                     </CardContent>
