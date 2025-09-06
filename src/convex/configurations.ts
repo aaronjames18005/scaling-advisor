@@ -564,6 +564,41 @@ resource "aws_cloudwatch_metric_alarm" "secrets_access_spike" {
     Environment = var.environment
   }
 }
+
+# Metric filter for Secrets Manager updates (Create/Update/Rotate/Delete)
+resource "aws_cloudwatch_log_metric_filter" "secrets_update" {
+  name           = "${slug}-secrets-update"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail.name
+  pattern        = "{ ($.eventSource = \"secretsmanager.amazonaws.com\") && (($.eventName = \"CreateSecret\") || ($.eventName = \"UpdateSecret\") || ($.eventName = \"UpdateSecretVersionStage\") || ($.eventName = \"RotateSecret\") || ($.eventName = \"DeleteSecret\")) }"
+
+  metric_transformation {
+    name      = "${slug}-secrets-update-count"
+    namespace = "Security"
+    value     = "1"
+  }
+}
+
+# Alarm: alert on any Secrets Manager update events
+resource "aws_cloudwatch_metric_alarm" "secrets_update_change" {
+  alarm_name          = "${slug}-secrets-update-change"
+  alarm_description   = "Alerts on Secrets Manager update events (Create/Update/Rotate/Delete)."
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  threshold           = 1
+  metric_name         = aws_cloudwatch_log_metric_filter.secrets_update.metric_transformation[0].name
+  namespace           = aws_cloudwatch_log_metric_filter.secrets_update.metric_transformation[0].namespace
+  period              = 300
+  statistic           = "Sum"
+
+  # Add SNS topics as needed
+  # alarm_actions = [aws_sns_topic.security_alerts.arn]
+  # ok_actions    = [aws_sns_topic.security_alerts.arn]
+
+  tags = {
+    Name        = "${slug}-secrets-update-change"
+    Environment = var.environment
+  }
+}
 `;
 
   return {
