@@ -16,6 +16,44 @@ export const roleValidator = v.union(
 );
 export type Role = Infer<typeof roleValidator>;
 
+// Project tech stacks
+export const TECH_STACKS = {
+  MERN: "mern",
+  DJANGO: "django", 
+  NEXTJS: "nextjs",
+  LARAVEL: "laravel",
+  RAILS: "rails",
+  FLASK: "flask",
+  SPRING: "spring",
+  DOTNET: "dotnet",
+} as const;
+
+export const techStackValidator = v.union(
+  v.literal(TECH_STACKS.MERN),
+  v.literal(TECH_STACKS.DJANGO),
+  v.literal(TECH_STACKS.NEXTJS),
+  v.literal(TECH_STACKS.LARAVEL),
+  v.literal(TECH_STACKS.RAILS),
+  v.literal(TECH_STACKS.FLASK),
+  v.literal(TECH_STACKS.SPRING),
+  v.literal(TECH_STACKS.DOTNET),
+);
+
+// Scaling phases
+export const SCALING_PHASES = {
+  STARTUP: "startup",
+  GROWTH: "growth", 
+  SCALE: "scale",
+  ENTERPRISE: "enterprise",
+} as const;
+
+export const scalingPhaseValidator = v.union(
+  v.literal(SCALING_PHASES.STARTUP),
+  v.literal(SCALING_PHASES.GROWTH),
+  v.literal(SCALING_PHASES.SCALE),
+  v.literal(SCALING_PHASES.ENTERPRISE),
+);
+
 const schema = defineSchema(
   {
     // default auth tables using convex auth.
@@ -32,12 +70,76 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
+    // Projects table
+    projects: defineTable({
+      userId: v.id("users"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      techStack: techStackValidator,
+      currentPhase: scalingPhaseValidator,
+      targetPhase: scalingPhaseValidator,
+      currentInfra: v.string(), // Current infrastructure description
+      scalingGoals: v.array(v.string()), // Array of scaling goals
+      status: v.union(v.literal("active"), v.literal("completed"), v.literal("archived")),
+    }).index("by_user", ["userId"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Scaling recommendations
+    recommendations: defineTable({
+      projectId: v.id("projects"),
+      title: v.string(),
+      description: v.string(),
+      priority: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+      category: v.string(), // e.g., "caching", "load-balancing", "database"
+      estimatedImpact: v.string(),
+      implementationTime: v.string(),
+      isCompleted: v.boolean(),
+    }).index("by_project", ["projectId"]),
+
+    // Generated configurations
+    configurations: defineTable({
+      projectId: v.id("projects"),
+      type: v.union(
+        v.literal("dockerfile"),
+        v.literal("kubernetes"),
+        v.literal("terraform"),
+        v.literal("github-actions"),
+        v.literal("docker-compose")
+      ),
+      name: v.string(),
+      content: v.string(), // The actual configuration content
+      description: v.optional(v.string()),
+    }).index("by_project", ["projectId"]),
+
+    // Scaling templates
+    templates: defineTable({
+      name: v.string(),
+      description: v.string(),
+      techStack: techStackValidator,
+      phase: scalingPhaseValidator,
+      category: v.string(),
+      content: v.string(), // Template content (YAML/JSON)
+      tags: v.array(v.string()),
+      isPublic: v.boolean(),
+      createdBy: v.optional(v.id("users")),
+    }).index("by_tech_stack", ["techStack"])
+      .index("by_phase", ["phase"])
+      .index("by_category", ["category"]),
+
+    // Roadmap steps
+    roadmapSteps: defineTable({
+      projectId: v.id("projects"),
+      title: v.string(),
+      description: v.string(),
+      order: v.number(),
+      isCompleted: v.boolean(),
+      estimatedDuration: v.string(),
+      dependencies: v.array(v.string()),
+      resources: v.array(v.object({
+        title: v.string(),
+        url: v.string(),
+        type: v.union(v.literal("documentation"), v.literal("tutorial"), v.literal("tool"))
+      })),
+    }).index("by_project", ["projectId"]),
   },
   {
     schemaValidation: false,
