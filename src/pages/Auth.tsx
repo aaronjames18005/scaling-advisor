@@ -30,6 +30,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -37,14 +41,25 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       navigate(redirect);
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
     setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    const submittedEmail = ((formData.get("email") as string) || email || "").trim();
+
+    if (!isValidEmail(submittedEmail)) {
+      setEmailTouched(true);
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const formData = new FormData(event.currentTarget);
+      formData.set("email", submittedEmail);
       await signIn("email-otp", formData);
-      setStep({ email: formData.get("email") as string });
+      setStep({ email: submittedEmail });
       setIsLoading(false);
     } catch (error) {
       console.error("Email sign-in error:", error);
@@ -61,6 +76,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    if (otp.trim().length !== 6) {
+      setError("Please enter the 6-digit verification code.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
@@ -132,16 +154,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         name="email"
                         placeholder="name@example.com"
                         type="email"
-                        className="pl-9"
+                        className={`pl-9 ${emailTouched && email && !isValidEmail(email) ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={isLoading}
                         required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => setEmailTouched(true)}
+                        aria-invalid={emailTouched && !!email && !isValidEmail(email)}
+                        aria-describedby="email-error"
                       />
                     </div>
                     <Button
                       type="submit"
                       variant="outline"
                       size="icon"
-                      disabled={isLoading}
+                      disabled={isLoading || !isValidEmail(email)}
                     >
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -150,6 +177,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       )}
                     </Button>
                   </div>
+                  {(emailTouched && email && !isValidEmail(email)) && (
+                    <p id="email-error" className="mt-2 text-xs text-red-500">
+                      Please enter a valid email address.
+                    </p>
+                  )}
                   {error && (
                     <p className="mt-2 text-sm text-red-500">{error}</p>
                   )}
@@ -196,7 +228,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <div className="flex justify-center">
                     <InputOTP
                       value={otp}
-                      onChange={setOtp}
+                      onChange={(val) => setOtp(val.replace(/\D/g, ""))}
                       maxLength={6}
                       disabled={isLoading}
                       onKeyDown={(e) => {
