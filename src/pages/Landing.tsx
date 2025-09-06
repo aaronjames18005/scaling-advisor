@@ -17,6 +17,7 @@ import {
   Zap 
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { LogoDropdown } from "@/components/LogoDropdown";
 
 export default function Landing() {
   const { isLoading, isAuthenticated, user } = useAuth();
@@ -67,6 +68,7 @@ export default function Landing() {
                   <Button onClick={() => navigate("/dashboard")} className="glow-primary">
                     Dashboard
                   </Button>
+                  <LogoDropdown />
                 </div>
               ) : (
                 <Button onClick={() => navigate("/auth")} variant="outline">
