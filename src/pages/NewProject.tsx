@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, Rocket, Sparkles, TrendingUp, Zap, Building2, Sun, 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function NewProject() {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
@@ -28,6 +29,26 @@ export default function NewProject() {
     currentInfra: "",
     scalingGoals: [] as string[],
   });
+
+  const estimateValidation = useMemo(() => {
+    const messages: string[] = [];
+    if (!formData.techStack) messages.push("Select a Tech Stack.");
+    if (!formData.currentPhase) messages.push("Select your Current Phase.");
+    if (!formData.targetPhase) messages.push("Select your Target Phase.");
+
+    // Optional sanity checks to guide better estimates (not blocking)
+    if (formData.scalingGoals.length > 10) {
+      messages.push("Limit scaling goals to 10 for accurate estimation.");
+    }
+    if (formData.currentInfra.length > 1000) {
+      messages.push("Current infrastructure description is too long.");
+    }
+
+    return {
+      ok: messages.length === 0,
+      messages,
+    };
+  }, [formData.techStack, formData.currentPhase, formData.targetPhase, formData.scalingGoals.length, formData.currentInfra.length]);
 
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -472,7 +493,17 @@ export default function NewProject() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Add: Validation alert for calculator */}
+                  {!estimateValidation.ok && (
+                    <Alert variant="destructive" role="alert" aria-live="polite">
+                      <AlertTitle>Complete required fields</AlertTitle>
+                      <AlertDescription>
+                        {estimateValidation.messages.join(" ")}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${!estimateValidation.ok ? "opacity-60 pointer-events-none select-none" : ""}`}>
                     {[
                       { key: "aws", name: "AWS" },
                       { key: "gcp", name: "GCP" },
@@ -485,7 +516,7 @@ export default function NewProject() {
                             <CardTitle className="text-base flex items-center justify-between">
                               <span>{p.name}</span>
                               <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold">
-                                {formatCurrency(data.total)}/mo
+                                {estimateValidation.ok ? `${formatCurrency(data.total)}/mo` : "—"}
                               </span>
                             </CardTitle>
                             <CardDescription className="text-xs">
@@ -501,7 +532,9 @@ export default function NewProject() {
                                 <span className="text-muted-foreground">
                                   {line.label}
                                 </span>
-                                <span className="font-medium">{formatCurrency(line.cost)}</span>
+                                <span className="font-medium">
+                                  {estimateValidation.ok ? formatCurrency(line.cost) : "—"}
+                                </span>
                               </div>
                             ))}
                           </CardContent>
