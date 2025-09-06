@@ -37,87 +37,98 @@ export default function NewProject() {
   });
 
   const costEstimates = useMemo(() => {
-    const phaseMultiplierMap: Record<string, number> = {
-      startup: 1,
-      growth: 2,
-      scale: 4,
-      enterprise: 8,
-    };
+    // Helpers to ensure numeric safety
+    const safeRound = (n: number) => (Number.isFinite(n) ? Math.round(Math.max(0, n)) : 0);
 
-    const stackBaselineMap: Record<string, number> = {
-      mern: 80,
-      nextjs: 90,
-      django: 85,
-      flask: 70,
-      laravel: 75,
-      rails: 85,
-      spring: 110,
-      dotnet: 120,
-    };
+    try {
+      const phaseMultiplierMap: Record<string, number> = {
+        startup: 1,
+        growth: 2,
+        scale: 4,
+        enterprise: 8,
+      };
 
-    const goalsFactor =
-      Math.min(Math.max(formData.scalingGoals.length, 0), 10) * 0.05;
+      const stackBaselineMap: Record<string, number> = {
+        mern: 80,
+        nextjs: 90,
+        django: 85,
+        flask: 70,
+        laravel: 75,
+        rails: 85,
+        spring: 110,
+        dotnet: 120,
+      };
 
-    const currentPhaseMult =
-      phaseMultiplierMap[formData.currentPhase || "startup"] ?? 1;
-    const targetPhaseMult =
-      phaseMultiplierMap[formData.targetPhase || "startup"] ?? 1;
+      const goalsFactor = Math.min(Math.max(formData.scalingGoals.length, 0), 10) * 0.05;
 
-    const phaseMult = Math.max(currentPhaseMult, targetPhaseMult);
+      const currentPhaseMult = phaseMultiplierMap[formData.currentPhase || "startup"] ?? 1;
+      const targetPhaseMult = phaseMultiplierMap[formData.targetPhase || "startup"] ?? 1;
 
-    const baseline =
-      stackBaselineMap[
-        formData.techStack as keyof typeof stackBaselineMap
-      ] ?? 80;
+      const phaseMult = Math.max(currentPhaseMult, targetPhaseMult);
 
-    const stackLift =
-      formData.techStack === "spring" || formData.techStack === "dotnet"
-        ? 1.25
-        : formData.techStack === "rails" || formData.techStack === "django"
-        ? 1.1
-        : 1.0;
+      const baseline = stackBaselineMap[formData.techStack as keyof typeof stackBaselineMap] ?? 80;
 
-    const derivedMonthly = baseline * stackLift * (1 + goalsFactor) * phaseMult;
+      const stackLift =
+        formData.techStack === "spring" || formData.techStack === "dotnet"
+          ? 1.25
+          : formData.techStack === "rails" || formData.techStack === "django"
+          ? 1.1
+          : 1.0;
 
-    const vendorDelta: Record<"aws" | "gcp" | "azure", number> = {
-      aws: 1.0,
-      gcp: 0.95,
-      azure: 1.05,
-    };
+      const derivedMonthlyRaw = baseline * stackLift * (1 + goalsFactor) * phaseMult;
+      const derivedMonthly = Number.isFinite(derivedMonthlyRaw) ? derivedMonthlyRaw : 0;
 
-    const storageAndBandwidth = 20 * phaseMult;
+      const vendorDelta: Record<"aws" | "gcp" | "azure", number> = {
+        aws: 1.0,
+        gcp: 0.95,
+        azure: 1.05,
+      };
 
-    const infraLower = formData.currentInfra.toLowerCase();
-    const managedServices =
-      (infraLower.includes("redis") ? 25 : 0) +
-      (infraLower.includes("postgres") ||
-      infraLower.includes("mysql") ||
-      infraLower.includes("mongodb")
-        ? 40
-        : 30);
+      const storageAndBandwidth = 20 * phaseMult;
 
-    const breakdown = (vendor: "aws" | "gcp" | "azure") => {
-      const vendorMultiplier = vendorDelta[vendor];
-      const compute = derivedMonthly * 0.7 * vendorMultiplier;
-      const db = (derivedMonthly * 0.2 + managedServices) * vendorMultiplier;
-      const netStorage =
-        (derivedMonthly * 0.1 + storageAndBandwidth) * vendorMultiplier;
-      const total = Math.max(20, compute + db + netStorage);
+      const infraLower = (formData.currentInfra || "").toLowerCase();
+      const managedServices =
+        (infraLower.includes("redis") ? 25 : 0) +
+        (infraLower.includes("postgres") ||
+        infraLower.includes("mysql") ||
+        infraLower.includes("mongodb")
+          ? 40
+          : 30);
+
+      const breakdown = (vendor: "aws" | "gcp" | "azure") => {
+        const vendorMultiplier = vendorDelta[vendor] ?? 1;
+        const compute = derivedMonthly * 0.7 * vendorMultiplier;
+        const db = (derivedMonthly * 0.2 + managedServices) * vendorMultiplier;
+        const netStorage = (derivedMonthly * 0.1 + storageAndBandwidth) * vendorMultiplier;
+        const total = Math.max(20, compute + db + netStorage);
+
+        return {
+          total: safeRound(total),
+          items: [
+            { label: "Compute + Autoscaling", cost: safeRound(compute) },
+            { label: "Managed DB/Cache", cost: safeRound(db) },
+            { label: "Bandwidth + Storage", cost: safeRound(netStorage) },
+          ],
+        };
+      };
+
       return {
-        total: Math.round(total),
+        aws: breakdown("aws"),
+        gcp: breakdown("gcp"),
+        azure: breakdown("azure"),
+      };
+    } catch (e) {
+      // Fallback to safe zeros to avoid UI breakage
+      const empty = {
+        total: 0,
         items: [
-          { label: "Compute + Autoscaling", cost: Math.round(compute) },
-          { label: "Managed DB/Cache", cost: Math.round(db) },
-          { label: "Bandwidth + Storage", cost: Math.round(netStorage) },
+          { label: "Compute + Autoscaling", cost: 0 },
+          { label: "Managed DB/Cache", cost: 0 },
+          { label: "Bandwidth + Storage", cost: 0 },
         ],
       };
-    };
-
-    return {
-      aws: breakdown("aws"),
-      gcp: breakdown("gcp"),
-      azure: breakdown("azure"),
-    };
+      return { aws: empty, gcp: empty, azure: empty };
+    }
   }, [formData]);
 
   useEffect(() => {
