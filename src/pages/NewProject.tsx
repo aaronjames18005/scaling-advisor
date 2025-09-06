@@ -36,6 +36,90 @@ export default function NewProject() {
     return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
+  const costEstimates = useMemo(() => {
+    const phaseMultiplierMap: Record<string, number> = {
+      startup: 1,
+      growth: 2,
+      scale: 4,
+      enterprise: 8,
+    };
+
+    const stackBaselineMap: Record<string, number> = {
+      mern: 80,
+      nextjs: 90,
+      django: 85,
+      flask: 70,
+      laravel: 75,
+      rails: 85,
+      spring: 110,
+      dotnet: 120,
+    };
+
+    const goalsFactor =
+      Math.min(Math.max(formData.scalingGoals.length, 0), 10) * 0.05;
+
+    const currentPhaseMult =
+      phaseMultiplierMap[formData.currentPhase || "startup"] ?? 1;
+    const targetPhaseMult =
+      phaseMultiplierMap[formData.targetPhase || "startup"] ?? 1;
+
+    const phaseMult = Math.max(currentPhaseMult, targetPhaseMult);
+
+    const baseline =
+      stackBaselineMap[
+        formData.techStack as keyof typeof stackBaselineMap
+      ] ?? 80;
+
+    const stackLift =
+      formData.techStack === "spring" || formData.techStack === "dotnet"
+        ? 1.25
+        : formData.techStack === "rails" || formData.techStack === "django"
+        ? 1.1
+        : 1.0;
+
+    const derivedMonthly = baseline * stackLift * (1 + goalsFactor) * phaseMult;
+
+    const vendorDelta: Record<"aws" | "gcp" | "azure", number> = {
+      aws: 1.0,
+      gcp: 0.95,
+      azure: 1.05,
+    };
+
+    const storageAndBandwidth = 20 * phaseMult;
+
+    const infraLower = formData.currentInfra.toLowerCase();
+    const managedServices =
+      (infraLower.includes("redis") ? 25 : 0) +
+      (infraLower.includes("postgres") ||
+      infraLower.includes("mysql") ||
+      infraLower.includes("mongodb")
+        ? 40
+        : 30);
+
+    const breakdown = (vendor: "aws" | "gcp" | "azure") => {
+      const vendorMultiplier = vendorDelta[vendor];
+      const compute = derivedMonthly * 0.7 * vendorMultiplier;
+      const db = (derivedMonthly * 0.2 + managedServices) * vendorMultiplier;
+      const netStorage =
+        (derivedMonthly * 0.1 + storageAndBandwidth) * vendorMultiplier;
+      const total = Math.max(20, compute + db + netStorage);
+      return {
+        total: Math.round(total),
+        items: [
+          { label: "Compute + Autoscaling", cost: Math.round(compute) },
+          { label: "Managed DB/Cache", cost: Math.round(db) },
+          { label: "Bandwidth + Storage", cost: Math.round(netStorage) },
+        ],
+      };
+    };
+
+    return {
+      aws: breakdown("aws"),
+      gcp: breakdown("gcp"),
+      azure: breakdown("azure"),
+    };
+  }, [formData]);
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -54,6 +138,8 @@ export default function NewProject() {
       navigate("/auth");
     }
   }, [authLoading, isAuthenticated, navigate]);
+
+  /* costEstimates moved above the auth check to avoid conditional hook invocation */
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -117,90 +203,6 @@ export default function NewProject() {
       scalingGoals: prev.scalingGoals.filter((_, i) => i !== index)
     }));
   };
-
-  const costEstimates = useMemo(() => {
-    // Basic multipliers inferred from phases
-    const phaseMultiplierMap: Record<string, number> = {
-      startup: 1,
-      growth: 2,
-      scale: 4,
-      enterprise: 8,
-    };
-    const stackBaselineMap: Record<string, number> = {
-      // Baseline (~$ per month) to approximate minimal app infra
-      mern: 80,
-      nextjs: 90,
-      django: 85,
-      flask: 70,
-      laravel: 75,
-      rails: 85,
-      spring: 110,
-      dotnet: 120,
-    };
-
-    const goalsFactor = Math.min(Math.max(formData.scalingGoals.length, 0), 10) * 0.05; // +5% per stated goal up to +50%
-    const currentPhaseMult = phaseMultiplierMap[formData.currentPhase || "startup"] ?? 1;
-    const targetPhaseMult = phaseMultiplierMap[formData.targetPhase || "startup"] ?? 1;
-
-    // Use target phase as primary driver, current as a floor
-    const phaseMult = Math.max(currentPhaseMult, targetPhaseMult);
-
-    const baseline =
-      stackBaselineMap[formData.techStack as keyof typeof stackBaselineMap] ?? 80;
-
-    // Heuristic adjustments based on tech stack characteristics
-    // e.g., JVM/.NET usually require larger instances, Node/Flask tend to be lighter
-    const stackLift =
-      formData.techStack === "spring" || formData.techStack === "dotnet" ? 1.25 :
-      formData.techStack === "rails" || formData.techStack === "django" ? 1.1 :
-      1.0;
-
-    // Derived monthly base before cloud vendor deltas
-    const derivedMonthly = baseline * stackLift * (1 + goalsFactor) * phaseMult;
-
-    // Cloud provider cost deltas (typical relative differences)
-    const vendorDelta = {
-      aws: 1.0,      // reference
-      gcp: 0.95,     // slightly cheaper for similar compute in many regions
-      azure: 1.05,   // slightly more in some workloads
-    };
-
-    // Add minimal bandwidth/storage estimates; scale with phase
-    const storageAndBandwidth = 20 * phaseMult; // $20 at startup, scales up
-
-    // Add managed DB/cache estimate
-    const managedServices =
-      (formData.currentInfra.toLowerCase().includes("redis") ? 25 : 0) +
-      (formData.currentInfra.toLowerCase().includes("postgres") ||
-      formData.currentInfra.toLowerCase().includes("mysql") ||
-      formData.currentInfra.toLowerCase().includes("mongodb")
-        ? 40
-        : 30); // assume some DB if not specified
-
-    const baseTotal = derivedMonthly + storageAndBandwidth + managedServices;
-
-    const breakdown = (vendor: "aws" | "gcp" | "azure") => {
-      const vendorMultiplier = vendorDelta[vendor];
-      const compute = (derivedMonthly * 0.7) * vendorMultiplier;   // 70% compute
-      const db = (derivedMonthly * 0.2 + managedServices) * vendorMultiplier; // 20% + managed services
-      const netStorage = (derivedMonthly * 0.1 + storageAndBandwidth) * vendorMultiplier; // 10% + sb
-      const total = Math.max(20, compute + db + netStorage); // guardrail
-      return {
-        total: Math.round(total),
-        items: [
-          { label: "Compute + Autoscaling", cost: Math.round(compute) },
-          { label: "Managed DB/Cache", cost: Math.round(db) },
-          { label: "Bandwidth + Storage", cost: Math.round(netStorage) },
-        ],
-      };
-    };
-
-    return {
-      aws: breakdown("aws"),
-      gcp: breakdown("gcp"),
-      azure: breakdown("azure"),
-    };
-  }, [formData]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -473,7 +475,7 @@ export default function NewProject() {
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-2">
-                            {data.items.map((line) => (
+                            {data.items.map((line: { label: string; cost: number }) => (
                               <div
                                 key={line.label}
                                 className="flex items-center justify-between text-sm"
