@@ -2,6 +2,12 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
+const MAX_NAME_LEN = 100;
+const MAX_DESC_LEN = 1000;
+const MAX_INFRA_LEN = 1000;
+const MAX_GOALS = 10;
+const MAX_GOAL_LEN = 200;
+
 export const create = mutation({
   args: {
     name: v.string(),
@@ -38,22 +44,60 @@ export const create = mutation({
         throw new Error("Unauthorized: User must be authenticated");
       }
 
+      // Input normalization
+      const name = args.name.trim();
+      const description = args.description?.trim();
+      const currentInfra = args.currentInfra.trim();
+      const scalingGoals = Array.from(
+        new Set(
+          args.scalingGoals
+            .map((g) => g.trim())
+            .filter((g) => g.length > 0)
+        )
+      );
+
+      // Validation
+      if (name.length === 0) {
+        throw new Error("Validation error: Project name cannot be empty.");
+      }
+      if (name.length > MAX_NAME_LEN) {
+        throw new Error(`Validation error: Project name must be <= ${MAX_NAME_LEN} characters.`);
+      }
+      if (description && description.length > MAX_DESC_LEN) {
+        throw new Error(`Validation error: Description must be <= ${MAX_DESC_LEN} characters.`);
+      }
+      if (currentInfra.length > MAX_INFRA_LEN) {
+        throw new Error(`Validation error: Current infrastructure must be <= ${MAX_INFRA_LEN} characters.`);
+      }
+      if (scalingGoals.length > MAX_GOALS) {
+        throw new Error(`Validation error: No more than ${MAX_GOALS} scaling goals allowed.`);
+      }
+      for (const goal of scalingGoals) {
+        if (goal.length > MAX_GOAL_LEN) {
+          throw new Error(`Validation error: Each scaling goal must be <= ${MAX_GOAL_LEN} characters.`);
+        }
+      }
+
       const projectId = await ctx.db.insert("projects", {
         userId: user._id,
-        name: args.name,
-        description: args.description,
+        name,
+        description,
         techStack: args.techStack,
         currentPhase: args.currentPhase,
         targetPhase: args.targetPhase,
-        currentInfra: args.currentInfra,
-        scalingGoals: args.scalingGoals,
+        currentInfra,
+        scalingGoals,
         status: "active",
       });
 
       return projectId;
     } catch (err) {
       console.error("projects.create error", { args, err });
-      throw new Error("Failed to create project. Please try again.");
+      throw new Error(
+        err instanceof Error && err.message.startsWith("Validation error:")
+          ? err.message
+          : "Failed to create project. Please try again."
+      );
     }
   },
 });
@@ -121,14 +165,38 @@ export const update = mutation({
       }
 
       const updates: any = {};
-      if (args.name !== undefined) updates.name = args.name;
-      if (args.description !== undefined) updates.description = args.description;
-      if (args.status !== undefined) updates.status = args.status;
+
+      if (args.name !== undefined) {
+        const name = args.name.trim();
+        if (name.length === 0) {
+          throw new Error("Validation error: Project name cannot be empty.");
+        }
+        if (name.length > MAX_NAME_LEN) {
+          throw new Error(`Validation error: Project name must be <= ${MAX_NAME_LEN} characters.`);
+        }
+        updates.name = name;
+      }
+
+      if (args.description !== undefined) {
+        const description = args.description?.trim() ?? "";
+        if (description.length > MAX_DESC_LEN) {
+          throw new Error(`Validation error: Description must be <= ${MAX_DESC_LEN} characters.`);
+        }
+        updates.description = args.description;
+      }
+
+      if (args.status !== undefined) {
+        updates.status = args.status;
+      }
 
       await ctx.db.patch(args.id, updates);
     } catch (err) {
       console.error("projects.update error", { args, err });
-      throw new Error("Failed to update project.");
+      throw new Error(
+        err instanceof Error && err.message.startsWith("Validation error:")
+          ? err.message
+          : "Failed to update project."
+      );
     }
   },
 });
