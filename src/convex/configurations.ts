@@ -246,6 +246,7 @@ spec:
 }
 
 function generateTerraform(project: any) {
+  const slug = project.name.toLowerCase().replace(/\s+/g, '-');
   const content = `# Terraform configuration for ${project.name}
 terraform {
   required_version = ">= 1.0"
@@ -280,7 +281,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-vpc"
+    Name        = "${slug}-vpc"
     Environment = var.environment
   }
 }
@@ -290,7 +291,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-igw"
+    Name        = "${slug}-igw"
     Environment = var.environment
   }
 }
@@ -305,7 +306,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-public-\${count.index + 1}"
+    Name        = "${slug}-public-\${count.index + 1}"
     Environment = var.environment
   }
 }
@@ -324,7 +325,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-public-rt"
+    Name        = "${slug}-public-rt"
     Environment = var.environment
   }
 }
@@ -337,7 +338,7 @@ resource "aws_route_table_association" "public" {
 
 # Security Group
 resource "aws_security_group" "app" {
-  name_prefix = "${project.name.toLowerCase().replace(/\s+/g, '-')}-"
+  name_prefix = "${slug}-"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -362,21 +363,21 @@ resource "aws_security_group" "app" {
   }
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-sg"
+    Name        = "${slug}-sg"
     Environment = var.environment
   }
 }
 
 # Application Load Balancer
 resource "aws_lb" "main" {
-  name               = "${project.name.toLowerCase().replace(/\s+/g, '-')}-alb"
+  name               = "${slug}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.app.id]
   subnets            = aws_subnet.public[*].id
 
   tags = {
-    Name        = "${project.name.toLowerCase().replace(/\s+/g, '-')}-alb"
+    Name        = "${slug}-alb"
     Environment = var.environment
   }
 }
@@ -384,12 +385,76 @@ resource "aws_lb" "main" {
 output "load_balancer_dns" {
   description = "DNS name of the load balancer"
   value       = aws_lb.main.dns_name
-}`;
+}
+
+# -------------------------------------------------------------------
+# Secrets Management (AWS Secrets Manager + KMS) - Least Privilege
+# -------------------------------------------------------------------
+
+# KMS key for encrypting secrets
+resource "aws_kms_key" "secrets" {
+  description             = "${slug} secrets encryption key"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = {
+    Name        = "${slug}-secrets-kms"
+    Environment = var.environment
+  }
+}
+
+# Secrets Manager secret container
+resource "aws_secretsmanager_secret" "app" {
+  name       = "${slug}/\${var.environment}/app"
+  kms_key_id = aws_kms_key.secrets.arn
+
+  tags = {
+    Name        = "${slug}-app-secret"
+    Environment = var.environment
+  }
+}
+
+# Initial secret version (example payload; replace with CI-injected values)
+resource "aws_secretsmanager_secret_version" "app" {
+  secret_id     = aws_secretsmanager_secret.app.id
+  secret_string = jsonencode({
+    DATABASE_URL = "postgresql://user:password@host:5432/${slug}"
+    API_KEY      = "change-me"
+  })
+}
+
+# IAM policy granting read access to only this secret
+resource "aws_iam_policy" "app_secrets_read" {
+  name   = "${slug}-secrets-read"
+  path   = "/"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AppSecretsReadOnly"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [aws_secretsmanager_secret.app.Arn]
+      }
+    ]
+  })
+}
+
+# Note: Attach the policy above to your app/compute role (ECS task role, EKS service account via IRSA, EC2 instance profile, etc.)
+# Example (uncomment and bind to your role ARN):
+# resource "aws_iam_role_policy_attachment" "app_secrets_read_attach" {
+#   role       = aws_iam_role.app_role.name
+#   policy_arn = aws_iam_policy.app_secrets_read.arn
+# }
+`;
 
   return {
     name: "main.tf",
     content,
-    description: `Terraform infrastructure configuration for ${project.name}`,
+    description: `Terraform infrastructure configuration (with Secrets Manager + KMS) for ${project.name}`,
   };
 }
 
