@@ -131,6 +131,15 @@ export default function NewProject() {
     }
   }, [formData]);
 
+  const toggleTheme = () => setIsDark((prev) => !prev);
+
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(Number.isFinite(n) ? Math.max(0, n) : 0);
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -141,8 +150,6 @@ export default function NewProject() {
       localStorage.setItem("theme", "light");
     }
   }, [isDark]);
-
-  const toggleTheme = () => setIsDark((prev) => !prev);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -473,12 +480,12 @@ export default function NewProject() {
                     ].map((p) => {
                       const data = costEstimates[p.key as keyof typeof costEstimates];
                       return (
-                        <Card key={p.key} className="border bg-card/60">
+                        <Card key={p.key} className="glass hover:glow-primary border bg-card/60">
                           <CardHeader className="pb-2">
                             <CardTitle className="text-base flex items-center justify-between">
                               <span>{p.name}</span>
-                              <span className="text-primary text-lg font-semibold">
-                                ${data.total}/mo
+                              <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold">
+                                {formatCurrency(data.total)}/mo
                               </span>
                             </CardTitle>
                             <CardDescription className="text-xs">
@@ -494,7 +501,7 @@ export default function NewProject() {
                                 <span className="text-muted-foreground">
                                   {line.label}
                                 </span>
-                                <span className="font-medium">${line.cost}</span>
+                                <span className="font-medium">{formatCurrency(line.cost)}</span>
                               </div>
                             ))}
                           </CardContent>
