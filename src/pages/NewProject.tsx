@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Rocket, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Rocket, Sparkles, TrendingUp, Zap, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -213,10 +213,30 @@ export default function NewProject() {
                         <SelectValue placeholder="Where are you now?" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="startup">🚀 Startup (MVP, basic deployment)</SelectItem>
-                        <SelectItem value="growth">📈 Growth (Some traffic, basic scaling)</SelectItem>
-                        <SelectItem value="scale">⚡ Scale (High traffic, performance focus)</SelectItem>
-                        <SelectItem value="enterprise">🏢 Enterprise (Complex infrastructure)</SelectItem>
+                        <SelectItem value="startup">
+                          <div className="flex items-center gap-2">
+                            <Rocket className="h-4 w-4 text-primary" />
+                            <span>Startup (MVP, basic deployment)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="growth">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-primary" />
+                            <span>Growth (Some traffic, basic scaling)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="scale">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-primary" />
+                            <span>Scale (High traffic, performance focus)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="enterprise">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            <span>Enterprise (Complex infrastructure)</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -231,10 +251,30 @@ export default function NewProject() {
                         <SelectValue placeholder="Where do you want to be?" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="startup">🚀 Startup (MVP, basic deployment)</SelectItem>
-                        <SelectItem value="growth">📈 Growth (Some traffic, basic scaling)</SelectItem>
-                        <SelectItem value="scale">⚡ Scale (High traffic, performance focus)</SelectItem>
-                        <SelectItem value="enterprise">🏢 Enterprise (Complex infrastructure)</SelectItem>
+                        <SelectItem value="startup">
+                          <div className="flex items-center gap-2">
+                            <Rocket className="h-4 w-4 text-primary" />
+                            <span>Startup (MVP, basic deployment)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="growth">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-primary" />
+                            <span>Growth (Some traffic, basic scaling)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="scale">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-primary" />
+                            <span>Scale (High traffic, performance focus)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="enterprise">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            <span>Enterprise (Complex infrastructure)</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
