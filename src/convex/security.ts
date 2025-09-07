@@ -5,63 +5,68 @@ import { getCurrentUser } from "./users";
 export const generateForProject = mutation({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("Unauthorized: User must be authenticated");
-    }
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
 
-    const project = await ctx.db.get(args.projectId);
-    if (!project || project.userId !== user._id) {
-      throw new Error("Project not found or access denied");
-    }
+      const project = await ctx.db.get(args.projectId);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Project not found or access denied");
+      }
 
-    // Clear existing compliance checks
-    const existingChecks = await ctx.db
-      .query("complianceChecks")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-      .collect();
-
-    for (const c of existingChecks) {
-      await ctx.db.delete(c._id);
-    }
-
-    // Generate compliance checks
-    const checks = generateComplianceChecks(project);
-
-    for (const c of checks) {
-      await ctx.db.insert("complianceChecks", {
-        projectId: args.projectId,
-        ...c,
-        isPassed: false,
-      });
-    }
-
-    // Insert or update security-oriented configurations
-    const securityArtifacts = generateSecurityArtifacts(project);
-
-    for (const art of securityArtifacts) {
-      // Upsert by type under project
-      const existing = await ctx.db
-        .query("configurations")
+      // Clear existing compliance checks
+      const existingChecks = await ctx.db
+        .query("complianceChecks")
         .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-        .filter((q) => q.eq(q.field("type"), art.type))
-        .first();
+        .collect();
 
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          content: art.content,
-          name: art.name,
-          description: art.description,
-        });
-      } else {
-        await ctx.db.insert("configurations", {
+      for (const c of existingChecks) {
+        await ctx.db.delete(c._id);
+      }
+
+      // Generate compliance checks
+      const checks = generateComplianceChecks(project);
+
+      for (const c of checks) {
+        await ctx.db.insert("complianceChecks", {
           projectId: args.projectId,
-          type: art.type as any,
-          name: art.name,
-          content: art.content,
-          description: art.description,
+          ...c,
+          isPassed: false,
         });
       }
+
+      // Insert or update security-oriented configurations
+      const securityArtifacts = generateSecurityArtifacts(project);
+
+      for (const art of securityArtifacts) {
+        // Upsert by type under project
+        const existing = await ctx.db
+          .query("configurations")
+          .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+          .filter((q) => q.eq(q.field("type"), art.type))
+          .first();
+
+        if (existing) {
+          await ctx.db.patch(existing._id, {
+            content: art.content,
+            name: art.name,
+            description: art.description,
+          });
+        } else {
+          await ctx.db.insert("configurations", {
+            projectId: args.projectId,
+            type: art.type as any,
+            name: art.name,
+            content: art.content,
+            description: art.description,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("security.generateForProject error", { args, err });
+      throw new Error("Failed to generate security artifacts and compliance checks.");
     }
   },
 });
@@ -69,16 +74,21 @@ export const generateForProject = mutation({
 export const listComplianceByProject = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) return [];
 
-    const project = await ctx.db.get(args.projectId);
-    if (!project || project.userId !== user._id) return [];
+      const project = await ctx.db.get(args.projectId);
+      if (!project || project.userId !== user._id) return [];
 
-    return await ctx.db
-      .query("complianceChecks")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-      .collect();
+      return await ctx.db
+        .query("complianceChecks")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .collect();
+    } catch (err) {
+      console.error("security.listComplianceByProject error", { args, err });
+      return [];
+    }
   },
 });
 
