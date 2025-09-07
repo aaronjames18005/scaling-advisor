@@ -51,6 +51,31 @@ export function InfraCanvas({
     setPan((p) => ({ x: safeNum(p.x), y: safeNum(p.y) }));
   }, []);
 
+  // Keyboard shortcuts: Ctrl/Cmd + (+ / - / 0)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.ctrlKey || e.metaKey;
+      if (!isMod) return;
+
+      // Prevent browser default zoom
+      if (e.key === "=" || e.key === "+" || e.key === "-" || e.key === "0") {
+        e.preventDefault();
+      }
+
+      if (e.key === "=" || e.key === "+") {
+        setZoom((z) => clampZoom(z * 1.1));
+      } else if (e.key === "-") {
+        setZoom((z) => clampZoom(z * 0.9));
+      } else if (e.key === "0") {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown as any, { passive: false } as any);
+    return () => window.removeEventListener("keydown", onKeyDown as any);
+  }, []);
+
   // Prevent stuck drag/pan when mouseup happens outside the canvas
   useEffect(() => {
     const handleWindowMouseUp = () => {
