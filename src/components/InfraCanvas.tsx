@@ -69,6 +69,16 @@ export function InfraCanvas({
   };
   const estimateNodeHeight = () => 72; // approximate; good enough for anchors
 
+  // Compute vertical order index by Y position (top to bottom)
+  const verticalOrder = useMemo(() => {
+    const sorted = [...nodes].sort((a, b) => a.y - b.y);
+    const map: Record<string, number> = {};
+    sorted.forEach((n, i) => {
+      map[n.id] = i + 1; // 1-based rank
+    });
+    return map;
+  }, [nodes]);
+
   useEffect(() => {
     // Ensure we don't end up with invalid pan/zoom after re-renders
     setZoom((z) => clampZoom(z));
@@ -673,6 +683,20 @@ export function InfraCanvas({
 
               {/* Connections layer (SVG in world coordinates) */}
               <svg className="absolute inset-0 overflow-visible pointer-events-none">
+                {/* Arrowhead marker definition for direction cues */}
+                <defs>
+                  <marker
+                    id="arrowhead"
+                    markerWidth="10"
+                    markerHeight="10"
+                    refX="8"
+                    refY="5"
+                    orient="auto"
+                    markerUnits="userSpaceOnUse"
+                  >
+                    <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--primary))" />
+                  </marker>
+                </defs>
                 {
                   edges.map((edge) => {
                     const from = nodes.find((n) => n.id === edge.fromId);
@@ -691,7 +715,6 @@ export function InfraCanvas({
                     const dx = Math.max(24, Math.abs(tx - sx) * 0.3);
                     const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx} ${ty}`;
 
-                    // Emphasize when hovering or selecting a connected node
                     const isActive =
                       (hoveredNodeId !== null &&
                         (edge.fromId === hoveredNodeId || edge.toId === hoveredNodeId)) ||
@@ -713,6 +736,7 @@ export function InfraCanvas({
                           strokeWidth={isActive ? 2 : 1.5}
                           className={`opacity-80 ${isActive ? "[stroke-dasharray:4_5] animate-[dash_0.9s_linear_infinite]" : "[stroke-dasharray:6_6] animate-[dash_1.2s_linear_infinite]"}`}
                           fill="none"
+                          markerEnd="url(#arrowhead)"
                         />
                         <circle
                           cx={tx}
@@ -741,7 +765,7 @@ export function InfraCanvas({
                     const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx} ${ty}`;
                     return (
                       <g className="pointer-events-none">
-                        <path d={path} stroke="hsl(var(--primary))" strokeWidth="2" className="opacity-70 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]" fill="none" />
+                        <path d={path} stroke="hsl(var(--primary))" strokeWidth="2" className="opacity-70 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]" fill="none" markerEnd="url(#arrowhead)" />
                       </g>
                     );
                   })()
@@ -769,7 +793,7 @@ export function InfraCanvas({
                       : n.type === "lb"
                       ? "bg-accent/10 border-accent/30 hover:bg-accent/15"
                       : "bg-ring/10 border-ring/30 hover:bg-ring/15"
-                  }`}
+                  }${connectingFromId && connectingFromId !== n.id ? " ring-1 ring-primary/40" : ""}`}
                   style={{ left: n.x, top: n.y }}
                   onMouseDown={(e) => onMouseDownNode(e, n.id)}
                   onClick={(e) => {
@@ -798,7 +822,7 @@ export function InfraCanvas({
                     ×
                   </button>
 
-                  {/* Add: connection count badge */}
+                  {/* Connection count badge */}
                   {(() => {
                     const count = edges.reduce((acc, e) => acc + ((e.fromId === n.id || e.toId === n.id) ? 1 : 0), 0);
                     if (count === 0) return null;
@@ -812,6 +836,17 @@ export function InfraCanvas({
                       </span>
                     );
                   })()}
+
+                  {/* Vertical order badge (top-to-bottom flow index) */}
+                  {verticalOrder[n.id] !== undefined && (
+                    <span
+                      className="absolute top-1 left-10 px-1.5 py-0.5 rounded text-[10px] leading-none border bg-background/80 text-primary"
+                      title={`Vertical order: ${verticalOrder[n.id]} (top to bottom)`}
+                      aria-label={`Order ${verticalOrder[n.id]}`}
+                    >
+                      #{verticalOrder[n.id]}
+                    </span>
+                  )}
 
                   <div
                     className={`px-2 py-1 text-xs font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
