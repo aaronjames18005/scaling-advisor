@@ -140,6 +140,12 @@ export function InfraCanvas({
     setSelectedId(null);
   };
 
+  // Add: clear all nodes helper
+  const clearAll = () => {
+    setNodes([]);
+    setSelectedId(null);
+  };
+
   const onMouseDownNode = (
     e: React.MouseEvent<HTMLDivElement>,
     id: string
@@ -376,65 +382,35 @@ export function InfraCanvas({
     return { terraformPreview, k8sPreview };
   }, [nodes, projectName]);
 
+  // Add: Delete/Backspace keyboard to remove selected node
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedId) {
+          e.preventDefault();
+          removeSelected();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown as any);
+    return () => window.removeEventListener("keydown", onKeyDown as any);
+  }, [selectedId]);
+
   return (
     <div className="space-y-4">
       <Card className="glass">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Canvas</CardTitle>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => addNode("db")} className="transition-transform hover:scale-[1.02]">
-              Add DB
-            </Button>
-            <Button variant="outline" onClick={() => addNode("lb")} className="transition-transform hover:scale-[1.02]">
-              Add LB
-            </Button>
-            <Button variant="outline" onClick={() => addNode("api")} className="transition-transform hover:scale-[1.02]">
-              Add API
-            </Button>
-            {/* Zoom controls */}
-            <div className="hidden sm:flex items-center ml-2">
-              <div className="flex items-center gap-1 rounded-full border bg-card/70 backdrop-blur px-1.5 py-1 shadow-sm">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setZoom((z) => clampZoom(z * 0.9))}
-                  aria-label="Zoom out"
-                  title="Zoom out (Ctrl/Cmd + wheel)"
-                  className="h-8 w-8"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <div className="px-2 text-xs text-muted-foreground tabular-nums min-w-[44px] text-center">
-                  {Math.round(zoom * 100)}%
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setZoom((z) => clampZoom(z * 1.1))}
-                  aria-label="Zoom in"
-                  title="Zoom in (Ctrl/Cmd + wheel)"
-                  className="h-8 w-8"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-                <div className="mx-1 h-5 w-px bg-border/70" />
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setZoom(clampZoom(1));
-                    setPan({ x: 0, y: 0 });
-                  }}
-                  aria-label="Reset view"
-                  title="Reset view"
-                  className="h-8 rounded-full"
-                >
-                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                  <span className="text-xs">Reset</span>
-                </Button>
-              </div>
-            </div>
+            {/* Removed: Add DB / Add LB / Add API header buttons */}
+            {/* Removed: header zoom controls to prevent layout stretching */}
+
+            {/* Actions */}
             <Button onClick={handleGenerate} className="glow-primary">
               Generate
+            </Button>
+            <Button variant="outline" onClick={clearAll}>
+              Clear Canvas
             </Button>
           </div>
         </CardHeader>
@@ -479,7 +455,6 @@ export function InfraCanvas({
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
             onMouseDown={(e) => {
-              // start panning only if background is clicked (not a node)
               if ((e.target as HTMLElement).closest("[data-node]")) return;
               setSelectedId(null);
               setIsPanning(true);
@@ -491,7 +466,50 @@ export function InfraCanvas({
             onDrop={onDropCanvas}
             onWheel={onWheel}
           >
-            {/* Inner world: pans & zooms together with nodes and grid */}
+            {/* Floating zoom controls inside canvas to avoid stretching layout */}
+            <div className="absolute top-2 right-2 z-10 hidden sm:flex items-center">
+              <div className="flex items-center gap-1 rounded-full border bg-card/70 backdrop-blur px-1.5 py-1 shadow-sm">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setZoom((z) => clampZoom(z * 0.9))}
+                  aria-label="Zoom out"
+                  title="Zoom out (Ctrl/Cmd + wheel)"
+                  className="h-8 w-8"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <div className="px-2 text-xs text-muted-foreground tabular-nums min-w-[44px] text-center">
+                  {Math.round(zoom * 100)}%
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setZoom((z) => clampZoom(z * 1.1))}
+                  aria-label="Zoom in"
+                  title="Zoom in (Ctrl/Cmd + wheel)"
+                  className="h-8 w-8"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <div className="mx-1 h-5 w-px bg-border/70" />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setZoom(clampZoom(1));
+                    setPan({ x: 0, y: 0 });
+                  }}
+                  aria-label="Reset view"
+                  title="Reset view"
+                  className="h-8 rounded-full"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  <span className="text-xs">Reset</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Inner world */}
             <div
               className="absolute inset-0"
               style={{
@@ -538,6 +556,20 @@ export function InfraCanvas({
                   title={`${labelForType(n.type)} • Drag to move`}
                   aria-label={`${labelForType(n.type)} node`}
                 >
+                  {/* Inline delete button to quickly remove nodes */}
+                  <button
+                    type="button"
+                    aria-label="Remove node"
+                    className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/70 border text-[10px] leading-none flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNodes((prev) => prev.filter((x) => x.id !== n.id));
+                      if (selectedId === n.id) setSelectedId(null);
+                    }}
+                  >
+                    ×
+                  </button>
+
                   <div
                     className={`px-2 py-1 text-[11px] font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
                       n.type === "db"
