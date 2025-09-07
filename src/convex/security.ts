@@ -189,6 +189,18 @@ function generateComplianceChecks(project: any) {
       "Create a CloudWatch Logs metric filter on CloudTrail for Secrets Manager events with errorCode and wire to an alarm (e.g., threshold >= 1 in 5m) with on-call notification. Ensure applications fail closed and log redacted error details.",
   });
 
+  // NEW: Auditing & alerting for secret changes (Create/Update/Rotate/Delete)
+  checks.push({
+    title: "Alert on Secrets Manager updates (Create/Update/Rotate/Delete)",
+    description:
+      "Continuously audit and alert on any change to secrets (create, update, rotation, deletion) to detect unauthorized or unexpected modifications.",
+    category: "secrets",
+    severity: "high",
+    standard: "cis-aws",
+    remediation:
+      "Add a CloudWatch Logs metric filter on CloudTrail for Secrets Manager events: CreateSecret, UpdateSecret, UpdateSecretVersionStage, RotateSecret, DeleteSecret. Connect an alarm with a low threshold (>= 1 event) over a short window (e.g., 5 minutes) and notify the on-call channel. Include environment tags and correlation IDs in alerts. Review events promptly and enforce change control.",
+  });
+
   return checks;
 }
 
