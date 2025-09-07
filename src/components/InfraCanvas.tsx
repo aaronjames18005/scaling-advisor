@@ -798,12 +798,9 @@ export function InfraCanvas({
                             textAnchor="middle"
                             alignmentBaseline="middle"
                             fontSize="12"
-                            fontWeight={600}
+                            fontWeight={700}
                             fill="oklch(var(--foreground))"
-                            stroke="oklch(var(--background))"
-                            strokeWidth="3"
-                            paintOrder="stroke"
-                            className={isActive ? "opacity-100" : "opacity-95"}
+                            className="opacity-100"
                           >
                             linked
                           </text>
@@ -864,12 +861,9 @@ export function InfraCanvas({
                             textAnchor="middle"
                             alignmentBaseline="middle"
                             fontSize="12"
-                            fontWeight={600}
+                            fontWeight={700}
                             fill="oklch(var(--foreground))"
-                            stroke="oklch(var(--background))"
-                            strokeWidth="3"
-                            paintOrder="stroke"
-                            className="opacity-95"
+                            className="opacity-100"
                           >
                             linking…
                           </text>
