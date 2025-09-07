@@ -759,7 +759,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="black"
-                          strokeWidth={isActive ? 9.5 : 8.5}
+                          strokeWidth={isActive ? 7.5 : 6.5} // thinner shadow
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-40"
@@ -771,7 +771,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={isActive ? 9 : 8}
+                          strokeWidth={isActive ? 7 : 6} // thinner sheath
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-100"
@@ -782,7 +782,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={isActive ? 5.2 : 4.4}
+                          strokeWidth={isActive ? 4.4 : 3.6} // thinner core
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className={
@@ -799,7 +799,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={1.3}
+                          strokeWidth={1.0} // thinner texture
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className=" [stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
@@ -810,7 +810,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={isActive ? 1.7 : 1.4}
+                          strokeWidth={isActive ? 1.4 : 1.2} // thinner sheen
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-45"
@@ -902,7 +902,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="black"
-                          strokeWidth={8.5}
+                          strokeWidth={6.5} // thinner preview shadow
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-40"
@@ -914,7 +914,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={8}
+                          strokeWidth={6} // thinner preview sheath
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-100"
@@ -925,7 +925,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={4.4}
+                          strokeWidth={3.6} // thinner preview core
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-100 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]"
@@ -938,7 +938,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={1.2}
+                          strokeWidth={1.0} // thinner preview texture
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
@@ -949,7 +949,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
-                          strokeWidth={1.35}
+                          strokeWidth={1.1} // thinner preview sheen
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-45"
