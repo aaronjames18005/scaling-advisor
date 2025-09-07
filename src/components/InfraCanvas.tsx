@@ -695,17 +695,17 @@ export function InfraCanvas({
                     orient="auto"
                     markerUnits="userSpaceOnUse"
                   >
-                    <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--primary))" />
+                    <path d="M0,0 L10,5 L0,10 z" fill="oklch(var(--primary))" />
                   </marker>
 
                   {/* New: soft gradient for edges */}
                   <linearGradient id="edgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="hsl(var(--ring))" stopOpacity="0.9" />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.95" />
+                    <stop offset="0%" stopColor="oklch(var(--ring))" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="oklch(var(--primary))" stopOpacity="0.95" />
                   </linearGradient>
                   <linearGradient id="edgeGradientActive" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.9" />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+                    <stop offset="0%" stopColor="oklch(var(--primary))" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="oklch(var(--primary))" stopOpacity="1" />
                   </linearGradient>
 
                   {/* New: subtle glow for active/hovered edges */}
@@ -750,7 +750,7 @@ export function InfraCanvas({
                         {/* subtle base rail */}
                         <path
                           d={path}
-                          stroke="hsl(var(--ring))"
+                          stroke="oklch(var(--ring))"
                           strokeWidth={isActive ? 4.2 : 3.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -774,14 +774,14 @@ export function InfraCanvas({
                           cx={sx}
                           cy={sy}
                           r={isActive ? 3.2 : 2.5}
-                          fill="hsl(var(--primary))"
+                          fill="oklch(var(--primary))"
                           className={isActive ? "opacity-95" : "opacity-85"}
                         />
                         <circle
                           cx={tx}
                           cy={ty}
                           r={isActive ? 3.2 : 2.5}
-                          fill="hsl(var(--primary))"
+                          fill="oklch(var(--primary))"
                           className={isActive ? "opacity-95" : "opacity-85"}
                         />
                         {/* NEW: midpoint "linked" label for always-visible connection cue */}
@@ -792,8 +792,8 @@ export function InfraCanvas({
                             textAnchor="middle"
                             alignmentBaseline="middle"
                             fontSize="9"
-                            fill="hsl(var(--foreground))"
-                            stroke="hsl(var(--background))"
+                            fill="oklch(var(--foreground))"
+                            stroke="oklch(var(--background))"
                             strokeWidth="2"
                             paintOrder="stroke"
                             className={isActive ? "opacity-100" : "opacity-85"}
@@ -838,7 +838,7 @@ export function InfraCanvas({
                           filter="url(#edgeGlow)"
                         />
                         {/* preview endpoint knot (source) */}
-                        <circle cx={sx} cy={sy} r="3" fill="hsl(var(--primary))" className="opacity-95" />
+                        <circle cx={sx} cy={sy} r="3" fill="oklch(var(--primary))" className="opacity-95" />
                         {/* NEW: "linking" midpoint cue */}
                         <g transform={`translate(${mx}, ${my - 8})`}>
                           <text
@@ -847,8 +847,8 @@ export function InfraCanvas({
                             textAnchor="middle"
                             alignmentBaseline="middle"
                             fontSize="9"
-                            fill="hsl(var(--foreground))"
-                            stroke="hsl(var(--background))"
+                            fill="oklch(var(--foreground))"
+                            stroke="oklch(var(--background))"
                             strokeWidth="2"
                             paintOrder="stroke"
                             className="opacity-90"
