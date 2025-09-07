@@ -463,7 +463,7 @@ export function InfraCanvas({
             ref={canvasRef}
             className={`relative h-[60vh] md:h-[480px] rounded-md border overflow-hidden transition-colors ${
               isDragOver ? "ring-2 ring-primary/60 bg-primary/5" : "bg-gradient-to-br from-background to-muted/40"
-            } select-none touch-none`}
+            } select-none touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
@@ -479,6 +479,8 @@ export function InfraCanvas({
             onDrop={onDropCanvas}
             onWheel={onWheel}
             onContextMenu={(e) => e.preventDefault()}
+            role="application"
+            aria-label="Infrastructure canvas. Drag to pan, mouse wheel with Ctrl or Cmd to zoom, drag items from palette to create nodes."
           >
             {/* Floating zoom controls inside canvas to avoid stretching layout */}
             <div className="absolute top-2 right-2 z-10 hidden sm:flex items-center">
@@ -552,7 +554,7 @@ export function InfraCanvas({
                   transition={{ duration: 0.15 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`absolute w-32 md:w-36 select-none rounded-lg border shadow-sm transition-all duration-150 ${
+                  className={`absolute w-32 md:w-36 select-none rounded-lg border shadow-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 ${
                     selectedId === n.id ? "ring-2 ring-primary glow-primary shadow-lg" : "hover:shadow-md"
                   } ${
                     draggingId === n.id ? "scale-[0.98] cursor-grabbing" : "cursor-move"
@@ -571,6 +573,7 @@ export function InfraCanvas({
                   }}
                   title={`${labelForType(n.type)} • Drag to move`}
                   aria-label={`${labelForType(n.type)} node`}
+                  tabIndex={0}
                 >
                   {/* Inline delete button to quickly remove nodes */}
                   <button
@@ -620,8 +623,14 @@ export function InfraCanvas({
               ))}
             </div>
 
+            {isPanning && (
+              <div className="pointer-events-none absolute top-2 left-2 px-2 py-1 rounded-md border bg-card/80 text-[11px] shadow-sm backdrop-blur">
+                Panning…
+              </div>
+            )}
+
             {/* Status HUD (does not pan/zoom) */}
-            <div className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2">
+            <div className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2" role="status" aria-live="polite">
               <div className="px-2 py-1 rounded-md border bg-card/80 text-[11px] shadow-sm backdrop-blur">
                 Zoom: <span className="font-mono">{Math.round(zoom * 100)}%</span>
               </div>
