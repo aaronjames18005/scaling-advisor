@@ -759,76 +759,108 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="black"
-                          strokeWidth={isActive ? 7.5 : 6.5}
+                          strokeWidth={isActive ? 8.5 : 7.5} // increase for stronger depth
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="opacity-35"
+                          className="opacity-40"
                           fill="none"
                           filter="url(#edgeShadow)"
                         />
-                        {/* 2) Colored underlay (rope border) */}
+                        {/* 2) Colored sheath (outer jacket) */}
                         <path
                           d={path}
                           stroke="oklch(var(--ring))"
-                          strokeWidth={isActive ? 7 : 6}
+                          strokeWidth={isActive ? 8 : 7} // thicker outer shell
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={isActive ? "opacity-90" : "opacity-75"}
+                          className={isActive ? "opacity-95" : "opacity-85"}
                           fill="none"
                         />
                         {/* 3) Main white rope core */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={isActive ? 4 : 3.2}
+                          strokeWidth={isActive ? 4.6 : 3.8} // slightly thicker white core
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className={
                             isActive
-                              ? "[stroke-dasharray:4_5] animate-[dash_0.85s_linear_infinite] opacity-100"
-                              : "[stroke-dasharray:6_6] animate-[dash_1.15s_linear_infinite] opacity-95"
+                              ? "[stroke-dasharray:4_5] animate-[dash_0.8s_linear_infinite] opacity-100"
+                              : "[stroke-dasharray:6_6] animate-[dash_1.1s_linear_infinite] opacity-100"
                           }
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter={isActive ? "url(#edgeGlow)" : undefined}
                         />
-                        {/* 4) Fine texture overlay for a "string" feel */}
+                        {/* 4) Fine braided texture overlay */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={1.2}
+                          strokeWidth={1.1}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="[stroke-dasharray:2_6] animate-[dash_1.6s_linear_infinite] opacity-60"
+                          className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
                           fill="none"
                         />
+                        {/* 5) Subtle sheen highlight */}
+                        <path
+                          d={path}
+                          stroke="oklch(var(--foreground))"
+                          strokeWidth={isActive ? 1.5 : 1.2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="opacity-45"
+                          fill="none"
+                          filter={isActive ? "url(#edgeGlow)" : undefined}
+                        />
 
-                        {/* Endpoint knots */}
+                        {/* Endpoint knot with ring outline + white core */}
                         <circle
                           cx={sx}
                           cy={sy}
-                          r={isActive ? 3.8 : 3.2}
+                          r={isActive ? 4.6 : 4.2}
                           fill="oklch(var(--foreground))"
-                          className={isActive ? "opacity-95" : "opacity-90"}
+                          className={isActive ? "opacity-100" : "opacity-95"}
+                        />
+                        <circle
+                          cx={sx}
+                          cy={sy}
+                          r={isActive ? 6 : 5.6}
+                          fill="none"
+                          stroke="oklch(var(--ring))"
+                          strokeWidth={1.4}
+                          className="opacity-90"
                         />
                         <circle
                           cx={tx}
                           cy={ty}
-                          r={isActive ? 3.8 : 3.2}
+                          r={isActive ? 4.6 : 4.2}
                           fill="oklch(var(--foreground))"
-                          className={isActive ? "opacity-95" : "opacity-90"}
+                          className={isActive ? "opacity-100" : "opacity-95"}
                         />
-                        {/* midpoint "linked" label */}
+                        <circle
+                          cx={tx}
+                          cy={ty}
+                          r={isActive ? 6 : 5.6}
+                          fill="none"
+                          stroke="oklch(var(--ring))"
+                          strokeWidth={1.4}
+                          className="opacity-90"
+                        />
+
+                        {/* midpoint label with white fill and dark stroke for crispness */}
                         <g transform={`translate(${mx}, ${my - 8})`}>
                           <text
                             x={0}
                             y={0}
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="12"
-                            fontWeight={700}
+                            fontSize="13"
+                            fontWeight={800}
                             fill="oklch(var(--foreground))"
-                            className="opacity-100"
+                            stroke="black"
+                            strokeWidth={2}
+                            paintOrder="stroke"
                           >
                             linked
                           </text>
@@ -863,28 +895,28 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="black"
-                          strokeWidth={6.5}
+                          strokeWidth={7.5}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="opacity-35"
+                          className="opacity-40"
                           fill="none"
                           filter="url(#edgeShadow)"
                         />
-                        {/* preview colored underlay */}
+                        {/* preview outer sheath */}
                         <path
                           d={path}
                           stroke="oklch(var(--ring))"
-                          strokeWidth={6}
+                          strokeWidth={7}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="opacity-8 0"
+                          className="opacity-90"
                           fill="none"
                         />
-                        {/* preview main white */}
+                        {/* preview main white core */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={3.2}
+                          strokeWidth={3.8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-100 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]"
@@ -892,29 +924,44 @@ export function InfraCanvas({
                           markerEnd="url(#arrowhead)"
                           filter="url(#edgeGlow)"
                         />
-                        {/* preview fine texture */}
+                        {/* preview braided texture */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={1.1}
+                          strokeWidth={1.05}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="[stroke-dasharray:2_6] animate-[dash_1.6s_linear_infinite] opacity-60"
+                          className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
                           fill="none"
                         />
-                        {/* preview endpoint knot (source): white */}
-                        <circle cx={sx} cy={sy} r="3.8" fill="oklch(var(--foreground))" className="opacity-95" />
-                        {/* "linking" midpoint cue */}
+                        {/* preview sheen */}
+                        <path
+                          d={path}
+                          stroke="oklch(var(--foreground))"
+                          strokeWidth={1.2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="opacity-45"
+                          fill="none"
+                          filter="url(#edgeGlow)"
+                        />
+                        {/* preview source knot with outline */}
+                        <circle cx={sx} cy={sy} r="4.6" fill="oklch(var(--foreground))" className="opacity-100" />
+                        <circle cx={sx} cy={sy} r="6" fill="none" stroke="oklch(var(--ring))" strokeWidth={1.4} className="opacity-90" />
+
+                        {/* "linking…" label, white with dark stroke */}
                         <g transform={`translate(${mx}, ${my - 8})`}>
                           <text
                             x={0}
                             y={0}
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="12"
-                            fontWeight={700}
+                            fontSize="13"
+                            fontWeight={800}
                             fill="oklch(var(--foreground))"
-                            className="opacity-100"
+                            stroke="black"
+                            strokeWidth={2}
+                            paintOrder="stroke"
                           >
                             linking…
                           </text>
