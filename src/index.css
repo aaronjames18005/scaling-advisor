@@ -125,6 +125,22 @@
   }
 }
 
+/* Connection line animation for InfraCanvas */
+@keyframes dash {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* Optional: slightly slower variant if needed elsewhere */
+/* @keyframes dash-slow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -28; }
+} */
+
 /* Custom glow effects */
 .glow-primary {
   box-shadow: 0 0 20px oklch(0.7 0.25 142 / 0.3);
