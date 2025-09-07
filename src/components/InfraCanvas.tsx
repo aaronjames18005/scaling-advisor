@@ -43,7 +43,7 @@ export function InfraCanvas({
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Safety helpers for numeric operations (avoid NaN/Infinity)
-  const clampZoom = (z: number) => Math.min(3, Math.max(0.8, Number.isFinite(z) ? z : 1)); // increase minimum to avoid squished proportions
+  const clampZoom = (z: number) => Math.min(2, Math.max(0.9, Number.isFinite(z) ? z : 1)); // tighten zoom bounds for better proportions
   const safeNum = (n: number, fallback = 0) => (Number.isFinite(n) ? n : fallback);
 
   useEffect(() => {
@@ -529,6 +529,7 @@ export function InfraCanvas({
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 transformOrigin: "0 0",
+                willChange: "transform",
               }}
             >
               {/* background grid that pans/zooms with content */}
@@ -551,7 +552,7 @@ export function InfraCanvas({
                   transition={{ duration: 0.15 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`absolute w-28 select-none rounded-lg border shadow-sm transition-all duration-150 ${
+                  className={`absolute w-32 md:w-36 select-none rounded-lg border shadow-sm transition-all duration-150 ${
                     selectedId === n.id ? "ring-2 ring-primary glow-primary shadow-lg" : "hover:shadow-md"
                   } ${
                     draggingId === n.id ? "scale-[0.98] cursor-grabbing" : "cursor-move"
@@ -586,7 +587,7 @@ export function InfraCanvas({
                   </button>
 
                   <div
-                    className={`px-2 py-1 text-[11px] font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
+                    className={`px-2 py-1 text-xs font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
                       n.type === "db"
                         ? "bg-primary/15 text-primary"
                         : n.type === "lb"
@@ -595,10 +596,10 @@ export function InfraCanvas({
                     }`}
                   >
                     <span className="inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-current" />
-                    <span>{iconForType(n.type)}</span>
+                    <span className="inline-block text-[14px] leading-none"> {iconForType(n.type)}</span>
                     <span className="truncate uppercase">{labelForType(n.type)}</span>
                   </div>
-                  <div className="p-2 text-[10px] text-muted-foreground space-x-1">
+                  <div className="p-2 text-[11px] text-muted-foreground space-x-1">
                     {n.type === "db" && (
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                         engine: {n.props?.engine ?? "postgres"}
