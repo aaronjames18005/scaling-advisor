@@ -752,20 +752,19 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={isActive ? 4.2 : 3.4}
+                          strokeWidth={isActive ? 5 : 4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={isActive ? "opacity-85" : "opacity-60"}
+                          className={isActive ? "opacity-100" : "opacity-90"}
                           fill="none"
                         />
-                        {/* gradient foreground with glow on active */}
                         <path
                           d={path}
-                          stroke={isActive ? "url(#edgeGradientActive)" : "url(#edgeGradient)"}
-                          strokeWidth={isActive ? 2.4 : 1.8}
+                          stroke="oklch(var(--foreground))"
+                          strokeWidth={isActive ? 3 : 2.2}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={`opacity-90 ${isActive ? "[stroke-dasharray:4_5] animate-[dash_0.85s_linear_infinite]" : "[stroke-dasharray:6_6] animate-[dash_1.15s_linear_infinite]"}`}
+                          className={isActive ? "[stroke-dasharray:4_5] animate-[dash_0.85s_linear_infinite] opacity-100" : "[stroke-dasharray:6_6] animate-[dash_1.15s_linear_infinite] opacity-95"}
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter={isActive ? "url(#edgeGlow)" : undefined}
@@ -830,10 +829,10 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth="2.2"
+                          strokeWidth={3}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="opacity-85 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]"
+                          className="opacity-100 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]"
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter="url(#edgeGlow)"
