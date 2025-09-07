@@ -34,6 +34,7 @@ export function InfraCanvas({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const addNode = (type: NodeType) => {
     const id = `${type}-${Math.random().toString(36).slice(2, 8)}`;
@@ -129,9 +130,14 @@ export function InfraCanvas({
   };
 
   const onDragOverCanvas = (e: React.DragEvent<HTMLDivElement>) => {
-    // Allow drop
+    // Allow drop + visual feedback
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
+    if (!isDragOver) setIsDragOver(true);
+  };
+
+  const onDragLeaveCanvas = () => {
+    setIsDragOver(false);
   };
 
   const onDropCanvas = (e: React.DragEvent<HTMLDivElement>) => {
@@ -151,6 +157,7 @@ export function InfraCanvas({
       Math.max(0, Math.min(x, maxX)),
       Math.max(0, Math.min(y, maxY))
     );
+    setIsDragOver(false); // add: reset state
   };
 
   const iconForType = (type: NodeType) => {
@@ -257,13 +264,13 @@ export function InfraCanvas({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Canvas</CardTitle>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => addNode("db")}>
+            <Button variant="outline" onClick={() => addNode("db")} className="transition-transform hover:scale-[1.02]">
               Add DB
             </Button>
-            <Button variant="outline" onClick={() => addNode("lb")}>
+            <Button variant="outline" onClick={() => addNode("lb")} className="transition-transform hover:scale-[1.02]">
               Add LB
             </Button>
-            <Button variant="outline" onClick={() => addNode("api")}>
+            <Button variant="outline" onClick={() => addNode("api")} className="transition-transform hover:scale-[1.02]">
               Add API
             </Button>
             <Button onClick={handleGenerate} className="glow-primary">
@@ -277,24 +284,27 @@ export function InfraCanvas({
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "db")}
-              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-card cursor-grab active:cursor-grabbing select-none"
+              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-primary/10 hover:text-primary cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm"
               title="Drag to canvas"
+              aria-label="Drag to create Database node"
             >
               🗄️ Database
             </div>
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "lb")}
-              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-card cursor-grab active:cursor-grabbing select-none"
+              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-accent/10 hover:text-accent cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm"
               title="Drag to canvas"
+              aria-label="Drag to create Load Balancer node"
             >
               ⚖️ Load Balancer
             </div>
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "api")}
-              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-card cursor-grab active:cursor-grabbing select-none"
+              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-ring/10 hover:text-ring cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm"
               title="Drag to canvas"
+              aria-label="Drag to create API Server node"
             >
               🖥️ API Server
             </div>
@@ -302,23 +312,39 @@ export function InfraCanvas({
 
           <div
             ref={canvasRef}
-            className="relative h-[360px] rounded-md border bg-gradient-to-br from-background to-muted/40 overflow-hidden"
+            className={`relative h-[360px] rounded-md border overflow-hidden transition-colors ${
+              isDragOver ? "ring-2 ring-primary/60 bg-primary/5" : "bg-gradient-to-br from-background to-muted/40"
+            }`}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
             onMouseDown={() => setSelectedId(null)}
             onDragOver={onDragOverCanvas}
+            onDragEnter={() => setIsDragOver(true)}
+            onDragLeave={onDragLeaveCanvas}
             onDrop={onDropCanvas}
           >
             {/* background grid */}
-            <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,theme(colors.border)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.border)_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
+            <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] opacity-30" />
+            {/* drop hint */}
+            {isDragOver && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="px-3 py-1.5 rounded-md text-xs bg-background/80 border shadow-sm">
+                  Release to add node
+                </div>
+              </div>
+            )}
             {nodes.map((n) => (
               <div
                 key={n.id}
-                className={`absolute w-28 select-none cursor-move rounded-lg border shadow-sm ${
-                  selectedId === n.id
-                    ? "ring-2 ring-primary bg-primary/10"
-                    : "bg-card/80"
+                className={`absolute w-28 select-none cursor-move rounded-lg border shadow-sm transition-transform active:scale-[0.98] ${
+                  selectedId === n.id ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
+                } ${
+                  n.type === "db"
+                    ? "bg-primary/5 border-primary/30"
+                    : n.type === "lb"
+                    ? "bg-accent/5 border-accent/30"
+                    : "bg-ring/5 border-ring/30"
                 }`}
                 style={{ left: n.x, top: n.y }}
                 onMouseDown={(e) => onMouseDownNode(e, n.id)}
@@ -326,10 +352,25 @@ export function InfraCanvas({
                   e.stopPropagation();
                   setSelectedId(n.id);
                 }}
+                title={`${labelForType(n.type)} • Drag to move`}
+                aria-label={`${labelForType(n.type)} node`}
               >
-                <div className="p-2 text-sm font-medium flex items-center gap-2">
+                <div
+                  className={`px-2 py-1 text-xs font-medium flex items-center gap-2 rounded-t-lg ${
+                    n.type === "db"
+                      ? "bg-primary/10 text-primary"
+                      : n.type === "lb"
+                      ? "bg-accent/10 text-accent"
+                      : "bg-ring/10 text-ring"
+                  }`}
+                >
                   <span>{iconForType(n.type)}</span>
-                  <span>{labelForType(n.type)}</span>
+                  <span className="truncate">{labelForType(n.type)}</span>
+                </div>
+                <div className="p-2 text-[10px] text-muted-foreground">
+                  {n.type === "db" && <span>engine: {n.props?.engine ?? "postgres"}</span>}
+                  {n.type === "api" && <span>replicas: {n.props?.replicas ?? 2}</span>}
+                  {n.type === "lb" && <span>public: true</span>}
                 </div>
               </div>
             ))}
