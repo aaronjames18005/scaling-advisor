@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { motion } from "framer-motion";
 
 type NodeType = "db" | "lb" | "api";
 
@@ -509,9 +510,14 @@ export function InfraCanvas({
                 </div>
               )}
               {nodes.map((n) => (
-                <div
+                <motion.div
                   key={n.id}
                   data-node
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   className={`absolute w-28 select-none rounded-lg border shadow-sm transition-all duration-150 ${
                     selectedId === n.id ? "ring-2 ring-primary glow-primary shadow-lg" : "hover:shadow-md"
                   } ${
@@ -562,8 +568,18 @@ export function InfraCanvas({
                       </span>
                     )}
                   </div>
-                </div>
+                </motion.div>
               ))}
+            </div>
+
+            {/* Status HUD (does not pan/zoom) */}
+            <div className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2">
+              <div className="px-2 py-1 rounded-md border bg-card/80 text-[11px] shadow-sm backdrop-blur">
+                Zoom: <span className="font-mono">{Math.round(zoom * 100)}%</span>
+              </div>
+              <div className="px-2 py-1 rounded-md border bg-card/80 text-[11px] shadow-sm backdrop-blur">
+                Nodes: <span className="font-mono">{nodes.length}</span>
+              </div>
             </div>
           </div>
         </CardContent>
