@@ -50,6 +50,7 @@ export function InfraCanvas({
   const [edges, setEdges] = useState<Edge[]>([]);
   const [connectingFromId, setConnectingFromId] = useState<string | null>(null);
   const [tempConnectPos, setTempConnectPos] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Drag UI state for palette highlight + drop pulse
   const [draggingType, setDraggingType] = useState<NodeType | null>(null);
@@ -690,12 +691,36 @@ export function InfraCanvas({
                     const dx = Math.max(24, Math.abs(tx - sx) * 0.3);
                     const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx} ${ty}`;
 
+                    // Emphasize when hovering or selecting a connected node
+                    const isActive =
+                      (hoveredNodeId !== null &&
+                        (edge.fromId === hoveredNodeId || edge.toId === hoveredNodeId)) ||
+                      (selectedId !== null &&
+                        (edge.fromId === selectedId || edge.toId === selectedId));
+
                     return (
                       <g key={edge.id} className="pointer-events-none">
-                        <path d={path} stroke="hsl(var(--ring))" strokeWidth="3" className="opacity-60" fill="none" />
-                        <path d={path} stroke="hsl(var(--primary))" strokeWidth="1.5" className="opacity-60 [stroke-dasharray:6_6] animate-[dash_1.2s_linear_infinite]" fill="none" />
-                        {/* arrow head */}
-                        <circle cx={tx} cy={ty} r="2.5" fill="hsl(var(--primary))" className="opacity-80" />
+                        <path
+                          d={path}
+                          stroke="hsl(var(--ring))"
+                          strokeWidth={isActive ? 4 : 3}
+                          className={isActive ? "opacity-80" : "opacity-60"}
+                          fill="none"
+                        />
+                        <path
+                          d={path}
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={isActive ? 2 : 1.5}
+                          className={`opacity-80 ${isActive ? "[stroke-dasharray:4_5] animate-[dash_0.9s_linear_infinite]" : "[stroke-dasharray:6_6] animate-[dash_1.2s_linear_infinite]"}`}
+                          fill="none"
+                        />
+                        <circle
+                          cx={tx}
+                          cy={ty}
+                          r={isActive ? "3.2" : "2.5"}
+                          fill="hsl(var(--primary))"
+                          className={isActive ? "opacity-90" : "opacity-80"}
+                        />
                       </g>
                     );
                   })
@@ -751,6 +776,8 @@ export function InfraCanvas({
                     e.stopPropagation();
                     setSelectedId(n.id);
                   }}
+                  onMouseEnter={() => setHoveredNodeId(n.id)}
+                  onMouseLeave={() => setHoveredNodeId(null)}
                   title={`${labelForType(n.type)} • Drag to move`}
                   aria-label={`${labelForType(n.type)} node`}
                   aria-selected={selectedId === n.id}
@@ -770,6 +797,21 @@ export function InfraCanvas({
                   >
                     ×
                   </button>
+
+                  {/* Add: connection count badge */}
+                  {(() => {
+                    const count = edges.reduce((acc, e) => acc + ((e.fromId === n.id || e.toId === n.id) ? 1 : 0), 0);
+                    if (count === 0) return null;
+                    return (
+                      <span
+                        className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] leading-none border bg-background/80 text-muted-foreground"
+                        title={`${count} connection${count === 1 ? "" : "s"}`}
+                        aria-label={`${count} connections`}
+                      >
+                        {count}
+                      </span>
+                    );
+                  })()}
 
                   <div
                     className={`px-2 py-1 text-xs font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
@@ -803,28 +845,34 @@ export function InfraCanvas({
                   </div>
 
                   {/* Connection handle (bottom-center) */}
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-5 w-5 rounded-full border bg-background/80 shadow-sm flex items-center justify-center cursor-crosshair hover:bg-primary/10 hover:border-primary/50"
-                    title="Drag to connect"
-                    role="button"
-                    aria-label="Drag to connect to another node"
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setConnectingFromId(n.id);
-                      setTempConnectPos(null);
-                    }}
-                    onMouseUp={(e) => {
-                      // releasing on same handle cancels
-                      e.stopPropagation();
-                      if (connectingFromId) {
-                        setConnectingFromId(null);
-                        setTempConnectPos(null);
-                      }
-                    }}
-                  >
-                    <span className="block h-1.5 w-1.5 rounded-full bg-primary" />
-                  </div>
+                  {(() => {
+                    const count = edges.reduce((acc, e) => acc + ((e.fromId === n.id || e.toId === n.id) ? 1 : 0), 0);
+                    const emphasized = count > 0 || connectingFromId === n.id;
+                    return (
+                      <div
+                        className={`absolute left-1/2 -translate-x-1/2 -bottom-2 h-5 w-5 rounded-full border bg-background/80 shadow-sm flex items-center justify-center cursor-crosshair hover:bg-primary/10 ${emphasized ? "border-primary/60 ring-1 ring-primary/40" : "hover:border-primary/50"}`}
+                        title="Drag to connect"
+                        role="button"
+                        aria-label="Drag to connect to another node"
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setConnectingFromId(n.id);
+                          setTempConnectPos(null);
+                        }}
+                        onMouseUp={(e) => {
+                          // releasing on same handle cancels
+                          e.stopPropagation();
+                          if (connectingFromId) {
+                            setConnectingFromId(null);
+                            setTempConnectPos(null);
+                          }
+                        }}
+                      >
+                        <span className={`block rounded-full ${emphasized ? "bg-primary h-2 w-2" : "bg-primary h-1.5 w-1.5"}`} />
+                      </div>
+                    );
+                  })()}
 
                   {/* Allow connecting by dropping onto a node */}
                   <div
