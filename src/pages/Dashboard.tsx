@@ -405,7 +405,7 @@ export default function Dashboard() {
                                 Infra Canvas
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
+                            <DialogContent className="w-[95vw] sm:w-auto max-w-4xl">
                               <DialogHeader>
                                 <DialogTitle>Interactive Infra Canvas</DialogTitle>
                                 <DialogDescription>

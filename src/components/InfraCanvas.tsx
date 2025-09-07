@@ -43,7 +43,7 @@ export function InfraCanvas({
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Safety helpers for numeric operations (avoid NaN/Infinity)
-  const clampZoom = (z: number) => Math.min(3, Math.max(0.5, Number.isFinite(z) ? z : 1));
+  const clampZoom = (z: number) => Math.min(3, Math.max(0.8, Number.isFinite(z) ? z : 1)); // increase minimum to avoid squished proportions
   const safeNum = (n: number, fallback = 0) => (Number.isFinite(n) ? n : fallback);
 
   useEffect(() => {
@@ -397,7 +397,7 @@ export function InfraCanvas({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setZoom((z) => Math.max(0.5, z * 0.9))}
+                  onClick={() => setZoom((z) => clampZoom(z * 0.9))}
                   aria-label="Zoom out"
                   title="Zoom out (Ctrl/Cmd + wheel)"
                   className="h-8 w-8"
@@ -410,7 +410,7 @@ export function InfraCanvas({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setZoom((z) => Math.min(3, z * 1.1))}
+                  onClick={() => setZoom((z) => clampZoom(z * 1.1))}
                   aria-label="Zoom in"
                   title="Zoom in (Ctrl/Cmd + wheel)"
                   className="h-8 w-8"
@@ -421,7 +421,7 @@ export function InfraCanvas({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setZoom(1);
+                    setZoom(clampZoom(1));
                     setPan({ x: 0, y: 0 });
                   }}
                   aria-label="Reset view"
@@ -472,7 +472,7 @@ export function InfraCanvas({
 
           <div
             ref={canvasRef}
-            className={`relative h-[360px] rounded-md border overflow-hidden transition-colors ${
+            className={`relative h-[60vh] md:h-[480px] rounded-md border overflow-hidden transition-colors ${
               isDragOver ? "ring-2 ring-primary/60 bg-primary/5" : "bg-gradient-to-br from-background to-muted/40"
             }`}
             onMouseMove={onMouseMove}
