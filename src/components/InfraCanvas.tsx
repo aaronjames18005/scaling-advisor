@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Database, Scale, Server } from "lucide-react";
 import { motion } from "framer-motion";
 
 type NodeType = "db" | "lb" | "api";
@@ -430,7 +430,7 @@ export function InfraCanvas({
               tabIndex={0}
               data-type="db"
             >
-              <span className="text-base leading-none">🗄️</span>
+              <Database className="h-4 w-4" />
               <span className="font-medium">Database</span>
             </div>
             <div
@@ -443,7 +443,7 @@ export function InfraCanvas({
               tabIndex={0}
               data-type="lb"
             >
-              <span className="text-base leading-none">⚖️</span>
+              <Scale className="h-4 w-4" />
               <span className="font-medium">Load Balancer</span>
             </div>
             <div
@@ -456,7 +456,7 @@ export function InfraCanvas({
               tabIndex={0}
               data-type="api"
             >
-              <span className="text-base leading-none">🖥️</span>
+              <Server className="h-4 w-4" />
               <span className="font-medium">API Server</span>
             </div>
           </div>
