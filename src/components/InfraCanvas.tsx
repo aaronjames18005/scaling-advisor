@@ -300,8 +300,9 @@ export function InfraCanvas({
     // Drop pulse animation (brief ripple at drop point)
     setDropPulse({ x: Math.max(0, Math.floor(localX)), y: Math.max(0, Math.floor(localY)), key: Date.now() });
     setDraggingType(null);
-    // Auto-clear pulse after animation
-    setTimeout(() => setDropPulse((p) => (p && p.key === (dropPulse?.key ?? 0) ? null : p)), 520);
+
+    // Ensure native DnD state is cleared so the ghost doesn't appear "stuck"
+    try { e.dataTransfer.clearData(); } catch {}
   };
 
   // Connect two nodes
@@ -913,7 +914,7 @@ export function InfraCanvas({
                   <div
                     className="absolute inset-0"
                     onMouseUp={(e) => {
-                      e.stopPropagation();
+                      // Do not stop propagation, so canvas/window mouseup can clear drag state
                       if (connectingFromId && connectingFromId !== n.id) {
                         tryConnectNodes(connectingFromId, n.id);
                       }
