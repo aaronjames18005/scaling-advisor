@@ -55,6 +55,26 @@ export function InfraCanvas({
     ]);
   };
 
+  const addNodeAt = (type: NodeType, x: number, y: number) => {
+    const id = `${type}-${Math.random().toString(36).slice(2, 8)}`;
+    const defaultProps =
+      type === "db"
+        ? { engine: "postgres" }
+        : type === "api"
+        ? { replicas: 2 }
+        : undefined;
+    setNodes((prev) => [
+      ...prev,
+      {
+        id,
+        type,
+        x: Math.max(0, Math.floor(x)),
+        y: Math.max(0, Math.floor(y)),
+        props: defaultProps,
+      },
+    ]);
+  };
+
   const removeSelected = () => {
     if (!selectedId) return;
     setNodes((prev) => prev.filter((n) => n.id !== selectedId));
@@ -100,6 +120,37 @@ export function InfraCanvas({
 
   const onMouseUp = () => {
     setDraggingId(null);
+  };
+
+  const onDragStartPalette = (e: React.DragEvent<HTMLDivElement>, type: NodeType) => {
+    e.dataTransfer.setData("text/plain", type);
+    // Indicate move to user agents
+    e.dataTransfer.effectAllowed = "copyMove";
+  };
+
+  const onDragOverCanvas = (e: React.DragEvent<HTMLDivElement>) => {
+    // Allow drop
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const onDropCanvas = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const type = e.dataTransfer.getData("text/plain") as NodeType;
+    if (!type || !["db", "lb", "api"].includes(type)) return;
+
+    const x = e.clientX - rect.left - 14; // small offset to center better
+    const y = e.clientY - rect.top - 14;
+    // Constrain within canvas
+    const maxX = rect.width - 120; // node width
+    const maxY = rect.height - 60; // node height
+    addNodeAt(
+      type,
+      Math.max(0, Math.min(x, maxX)),
+      Math.max(0, Math.min(y, maxY))
+    );
   };
 
   const iconForType = (type: NodeType) => {
@@ -221,6 +272,34 @@ export function InfraCanvas({
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-3 flex items-center gap-3">
+            <div className="text-xs text-muted-foreground">Drag to create:</div>
+            <div
+              draggable
+              onDragStart={(e) => onDragStartPalette(e, "db")}
+              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-card cursor-grab active:cursor-grabbing select-none"
+              title="Drag to canvas"
+            >
+              🗄️ Database
+            </div>
+            <div
+              draggable
+              onDragStart={(e) => onDragStartPalette(e, "lb")}
+              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-card cursor-grab active:cursor-grabbing select-none"
+              title="Drag to canvas"
+            >
+              ⚖️ Load Balancer
+            </div>
+            <div
+              draggable
+              onDragStart={(e) => onDragStartPalette(e, "api")}
+              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-card cursor-grab active:cursor-grabbing select-none"
+              title="Drag to canvas"
+            >
+              🖥️ API Server
+            </div>
+          </div>
+
           <div
             ref={canvasRef}
             className="relative h-[360px] rounded-md border bg-gradient-to-br from-background to-muted/40 overflow-hidden"
@@ -228,6 +307,8 @@ export function InfraCanvas({
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
             onMouseDown={() => setSelectedId(null)}
+            onDragOver={onDragOverCanvas}
+            onDrop={onDropCanvas}
           >
             {/* background grid */}
             <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,theme(colors.border)_1px,transparent_1px),linear-gradient(to_bottom,theme(colors.border)_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
