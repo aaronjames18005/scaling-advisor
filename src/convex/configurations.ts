@@ -423,6 +423,35 @@ resource "aws_secretsmanager_secret_version" "app" {
   })
 }
 
+# -----------------------------------------------------------------------------
+# OPTIONAL: Secret Rotation (enable by providing a rotation Lambda)
+# -----------------------------------------------------------------------------
+# To enable rotation, deploy a rotation Lambda (AWS provides blueprints) and set
+# its ARN below. Then uncomment the aws_secretsmanager_secret_rotation resource.
+#
+# variable "rotation_lambda_arn" {
+#   description = "ARN of the Lambda function that performs secret rotation"
+#   type        = string
+#   default     = ""
+# }
+#
+# resource "aws_secretsmanager_secret_rotation" "app" {
+#   secret_id           = aws_secretsmanager_secret.app.id
+#   rotation_lambda_arn = var.rotation_lambda_arn
+#
+#   rotation_rules {
+#     automatically_after_days = 90  # rotate every 90 days
+#   }
+# }
+#
+# Notes:
+# - Use AWS-provided rotation templates for common engines (e.g., RDS, DocumentDB).
+# - Ensure the Lambda's execution role can:
+#   * Read/write the secret (secretsmanager:GetSecretValue, PutSecretValue, DescribeSecret)
+#   * Decrypt with KMS (kms:Decrypt)
+#   * Update the secret's staging labels (secretsmanager:UpdateSecretVersionStage)
+# - Validate rotated credentials before promoting AWSCURRENT; roll back on failure.
+
 # IAM policy granting read access to only this secret
 resource "aws_iam_policy" "app_secrets_read" {
   name   = "${slug}-secrets-read"
