@@ -748,23 +748,29 @@ export function InfraCanvas({
 
                     return (
                       <g key={edge.id} className="pointer-events-none">
-                        {/* subtle base rail */}
+                        {/* thicker dark underlay for contrast (border) */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
-                          strokeWidth={isActive ? 5 : 4}
+                          // Change base rail to background to create a border under white line
+                          stroke="oklch(var(--background))"
+                          strokeWidth={isActive ? 6 : 5}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={isActive ? "opacity-100" : "opacity-90"}
+                          className={isActive ? "opacity-100" : "opacity-95"}
                           fill="none"
                         />
+                        {/* visible white foreground with dash animation */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={isActive ? 3 : 2.2}
+                          strokeWidth={isActive ? 3.2 : 2.6}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={isActive ? "[stroke-dasharray:4_5] animate-[dash_0.85s_linear_infinite] opacity-100" : "[stroke-dasharray:6_6] animate-[dash_1.15s_linear_infinite] opacity-95"}
+                          className={
+                            isActive
+                              ? "[stroke-dasharray:4_5] animate-[dash_0.85s_linear_infinite] opacity-100"
+                              : "[stroke-dasharray:6_6] animate-[dash_1.15s_linear_infinite] opacity-95"
+                          }
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter={isActive ? "url(#edgeGlow)" : undefined}
@@ -773,30 +779,31 @@ export function InfraCanvas({
                         <circle
                           cx={sx}
                           cy={sy}
-                          r={isActive ? 3.2 : 2.5}
+                          r={isActive ? 3.8 : 3.2}
                           fill="oklch(var(--foreground))"
-                          className={isActive ? "opacity-95" : "opacity-85"}
+                          className={isActive ? "opacity-95" : "opacity-90"}
                         />
                         <circle
                           cx={tx}
                           cy={ty}
-                          r={isActive ? 3.2 : 2.5}
+                          r={isActive ? 3.8 : 3.2}
                           fill="oklch(var(--foreground))"
-                          className={isActive ? "opacity-95" : "opacity-85"}
+                          className={isActive ? "opacity-95" : "opacity-90"}
                         />
-                        {/* NEW: midpoint "linked" label for always-visible connection cue */}
+                        {/* midpoint "linked" label with larger font and stronger outline */}
                         <g transform={`translate(${mx}, ${my - 8})`}>
                           <text
                             x={0}
                             y={0}
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="9"
+                            fontSize="12"
+                            fontWeight={600}
                             fill="oklch(var(--foreground))"
                             stroke="oklch(var(--background))"
-                            strokeWidth="2"
+                            strokeWidth="3"
                             paintOrder="stroke"
-                            className={isActive ? "opacity-100" : "opacity-85"}
+                            className={isActive ? "opacity-100" : "opacity-95"}
                           >
                             linked
                           </text>
@@ -826,6 +833,16 @@ export function InfraCanvas({
 
                     return (
                       <g className="pointer-events-none">
+                        {/* dark underlay for contrast */}
+                        <path
+                          d={path}
+                          stroke="oklch(var(--background))"
+                          strokeWidth={5.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="opacity-95"
+                          fill="none"
+                        />
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
@@ -838,20 +855,21 @@ export function InfraCanvas({
                           filter="url(#edgeGlow)"
                         />
                         {/* preview endpoint knot (source): white */}
-                        <circle cx={sx} cy={sy} r="3" fill="oklch(var(--foreground))" className="opacity-95" />
-                        {/* NEW: "linking" midpoint cue */}
+                        <circle cx={sx} cy={sy} r="3.8" fill="oklch(var(--foreground))" className="opacity-95" />
+                        {/* "linking" midpoint cue with larger font and stronger outline */}
                         <g transform={`translate(${mx}, ${my - 8})`}>
                           <text
                             x={0}
                             y={0}
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="9"
+                            fontSize="12"
+                            fontWeight={600}
                             fill="oklch(var(--foreground))"
                             stroke="oklch(var(--background))"
-                            strokeWidth="2"
+                            strokeWidth="3"
                             paintOrder="stroke"
-                            className="opacity-90"
+                            className="opacity-95"
                           >
                             linking…
                           </text>
