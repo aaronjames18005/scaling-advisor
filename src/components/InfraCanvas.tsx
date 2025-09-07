@@ -695,7 +695,8 @@ export function InfraCanvas({
                     orient="auto"
                     markerUnits="userSpaceOnUse"
                   >
-                    <path d="M0,0 L10,5 L0,10 z" fill="oklch(var(--primary))" />
+                    {/* Make arrowhead white */}
+                    <path d="M0,0 L10,5 L0,10 z" fill="oklch(var(--foreground))" />
                   </marker>
 
                   {/* New: soft gradient for edges */}
@@ -750,7 +751,7 @@ export function InfraCanvas({
                         {/* subtle base rail */}
                         <path
                           d={path}
-                          stroke="oklch(var(--ring))"
+                          stroke="oklch(var(--foreground))"
                           strokeWidth={isActive ? 4.2 : 3.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -774,14 +775,14 @@ export function InfraCanvas({
                           cx={sx}
                           cy={sy}
                           r={isActive ? 3.2 : 2.5}
-                          fill="oklch(var(--primary))"
+                          fill="oklch(var(--foreground))"
                           className={isActive ? "opacity-95" : "opacity-85"}
                         />
                         <circle
                           cx={tx}
                           cy={ty}
                           r={isActive ? 3.2 : 2.5}
-                          fill="oklch(var(--primary))"
+                          fill="oklch(var(--foreground))"
                           className={isActive ? "opacity-95" : "opacity-85"}
                         />
                         {/* NEW: midpoint "linked" label for always-visible connection cue */}
@@ -828,7 +829,7 @@ export function InfraCanvas({
                       <g className="pointer-events-none">
                         <path
                           d={path}
-                          stroke="url(#edgeGradientActive)"
+                          stroke="oklch(var(--foreground))"
                           strokeWidth="2.2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -837,8 +838,8 @@ export function InfraCanvas({
                           markerEnd="url(#arrowhead)"
                           filter="url(#edgeGlow)"
                         />
-                        {/* preview endpoint knot (source) */}
-                        <circle cx={sx} cy={sy} r="3" fill="oklch(var(--primary))" className="opacity-95" />
+                        {/* preview endpoint knot (source): white */}
+                        <circle cx={sx} cy={sy} r="3" fill="oklch(var(--foreground))" className="opacity-95" />
                         {/* NEW: "linking" midpoint cue */}
                         <g transform={`translate(${mx}, ${my - 8})`}>
                           <text
