@@ -696,7 +696,7 @@ export function InfraCanvas({
                     markerUnits="userSpaceOnUse"
                   >
                     {/* Make arrowhead white */}
-                    <path d="M0,0 L10,5 L0,10 z" fill="oklch(var(--foreground))" />
+                    <path d="M0,0 L10,5 L0,10 z" fill="#ffffff" />
                   </marker>
 
                   {/* New: soft gradient for edges */}
@@ -770,18 +770,18 @@ export function InfraCanvas({
                         {/* 2) Colored sheath (outer jacket) */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={isActive ? 9 : 8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={isActive ? "opacity-95" : "opacity-85"}
+                          className="opacity-100"
                           fill="none"
                           vectorEffect="non-scaling-stroke"
                         />
                         {/* 3) Main white rope core */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={isActive ? 5.2 : 4.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -798,18 +798,18 @@ export function InfraCanvas({
                         {/* 4) Fine braided texture overlay */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={1.3}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
+                          className=" [stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
                           fill="none"
                           vectorEffect="non-scaling-stroke"
                         />
                         {/* 5) Subtle sheen highlight */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={isActive ? 1.7 : 1.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -824,7 +824,7 @@ export function InfraCanvas({
                           cx={sx}
                           cy={sy}
                           r={isActive ? 4.6 : 4.2}
-                          fill="oklch(var(--foreground))"
+                          fill="#ffffff"
                           className={isActive ? "opacity-100" : "opacity-95"}
                         />
                         <circle
@@ -841,7 +841,7 @@ export function InfraCanvas({
                           cx={tx}
                           cy={ty}
                           r={isActive ? 4.6 : 4.2}
-                          fill="oklch(var(--foreground))"
+                          fill="#ffffff"
                           className={isActive ? "opacity-100" : "opacity-95"}
                         />
                         <circle
@@ -864,7 +864,7 @@ export function InfraCanvas({
                             alignmentBaseline="middle"
                             fontSize="14"
                             fontWeight={800}
-                            fill="oklch(var(--foreground))"
+                            fill="#ffffff"
                             stroke="black"
                             strokeWidth={2.2}
                             paintOrder="stroke"
@@ -913,18 +913,18 @@ export function InfraCanvas({
                         {/* preview outer sheath */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="opacity-90"
+                          className="opacity-100"
                           fill="none"
                           vectorEffect="non-scaling-stroke"
                         />
                         {/* preview main white core */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={4.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -937,7 +937,7 @@ export function InfraCanvas({
                         {/* preview braided texture */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={1.2}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -948,7 +948,7 @@ export function InfraCanvas({
                         {/* preview sheen */}
                         <path
                           d={path}
-                          stroke="oklch(var(--foreground))"
+                          stroke="#ffffff"
                           strokeWidth={1.35}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -958,7 +958,7 @@ export function InfraCanvas({
                           vectorEffect="non-scaling-stroke"
                         />
                         {/* preview source knot with outline */}
-                        <circle cx={sx} cy={sy} r="4.6" fill="oklch(var(--foreground))" className="opacity-100" />
+                        <circle cx={sx} cy={sy} r="4.6" fill="#ffffff" className="opacity-100" />
                         <circle cx={sx} cy={sy} r="6" fill="none" stroke="oklch(var(--ring))" strokeWidth={1.6} className="opacity-90" vectorEffect="non-scaling-stroke" />
 
                         {/* "linking…" label, white with dark stroke */}
@@ -970,7 +970,7 @@ export function InfraCanvas({
                             alignmentBaseline="middle"
                             fontSize="14"
                             fontWeight={800}
-                            fill="oklch(var(--foreground))"
+                            fill="#ffffff"
                             stroke="black"
                             strokeWidth={2.2}
                             paintOrder="stroke"
