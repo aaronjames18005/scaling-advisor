@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 
 type NodeType = "db" | "lb" | "api";
 
@@ -325,23 +326,46 @@ export function InfraCanvas({
               Add API
             </Button>
             {/* Zoom controls */}
-            <div className="hidden sm:flex items-center gap-1 ml-2">
-              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.max(0.5, z * 0.9))} aria-label="Zoom out">
-                -
-              </Button>
-              <div className="px-2 text-xs text-muted-foreground tabular-nums">{Math.round(zoom * 100)}%</div>
-              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.min(3, z * 1.1))} aria-label="Zoom in">
-                +
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setZoom(1);
-                  setPan({ x: 0, y: 0 });
-                }}
-              >
-                Reset
-              </Button>
+            <div className="hidden sm:flex items-center ml-2">
+              <div className="flex items-center gap-1 rounded-full border bg-card/70 backdrop-blur px-1.5 py-1 shadow-sm">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setZoom((z) => Math.max(0.5, z * 0.9))}
+                  aria-label="Zoom out"
+                  title="Zoom out (Ctrl/Cmd + wheel)"
+                  className="h-8 w-8"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <div className="px-2 text-xs text-muted-foreground tabular-nums min-w-[44px] text-center">
+                  {Math.round(zoom * 100)}%
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setZoom((z) => Math.min(3, z * 1.1))}
+                  aria-label="Zoom in"
+                  title="Zoom in (Ctrl/Cmd + wheel)"
+                  className="h-8 w-8"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <div className="mx-1 h-5 w-px bg-border/70" />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setZoom(1);
+                    setPan({ x: 0, y: 0 });
+                  }}
+                  aria-label="Reset view"
+                  title="Reset view"
+                  className="h-8 rounded-full"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  <span className="text-xs">Reset</span>
+                </Button>
+              </div>
             </div>
             <Button onClick={handleGenerate} className="glow-primary">
               Generate
