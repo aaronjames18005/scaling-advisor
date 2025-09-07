@@ -770,7 +770,7 @@ export function InfraCanvas({
                         {/* 2) Colored sheath (outer jacket) */}
                         <path
                           d={path}
-                          stroke="oklch(var(--ring))"
+                          stroke="oklch(var(--foreground))"
                           strokeWidth={isActive ? 9 : 8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -913,7 +913,7 @@ export function InfraCanvas({
                         {/* preview outer sheath */}
                         <path
                           d={path}
-                          stroke="oklch(var(--ring))"
+                          stroke="oklch(var(--foreground))"
                           strokeWidth={8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
