@@ -741,6 +741,10 @@ export function InfraCanvas({
                       (selectedId !== null &&
                         (edge.fromId === selectedId || edge.toId === selectedId));
 
+                    // NEW: midpoint for visible "linked" cue
+                    const mx = (sx + tx) / 2;
+                    const my = (sy + ty) / 2;
+
                     return (
                       <g key={edge.id} className="pointer-events-none">
                         {/* subtle base rail */}
@@ -765,13 +769,38 @@ export function InfraCanvas({
                           markerEnd="url(#arrowhead)"
                           filter={isActive ? "url(#edgeGlow)" : undefined}
                         />
+                        {/* NEW: visible endpoint knots (source + target) */}
                         <circle
-                          cx={tx}
-                          cy={ty}
-                          r={isActive ? "3.2" : "2.5"}
+                          cx={sx}
+                          cy={sy}
+                          r={isActive ? 3.2 : 2.5}
                           fill="hsl(var(--primary))"
                           className={isActive ? "opacity-95" : "opacity-85"}
                         />
+                        <circle
+                          cx={tx}
+                          cy={ty}
+                          r={isActive ? 3.2 : 2.5}
+                          fill="hsl(var(--primary))"
+                          className={isActive ? "opacity-95" : "opacity-85"}
+                        />
+                        {/* NEW: midpoint "linked" label for always-visible connection cue */}
+                        <g transform={`translate(${mx}, ${my - 8})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            textAnchor="middle"
+                            alignmentBaseline="middle"
+                            fontSize="9"
+                            fill="hsl(var(--foreground))"
+                            stroke="hsl(var(--background))"
+                            strokeWidth="2"
+                            paintOrder="stroke"
+                            className={isActive ? "opacity-100" : "opacity-85"}
+                          >
+                            linked
+                          </text>
+                        </g>
                       </g>
                     );
                   })
@@ -790,6 +819,11 @@ export function InfraCanvas({
                     const ty = tempConnectPos.y;
                     const dx = Math.max(24, Math.abs(tx - sx) * 0.3);
                     const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx} ${ty}`;
+
+                    // NEW: midpoint for "linking" preview label
+                    const mx = (sx + tx) / 2;
+                    const my = (sy + ty) / 2;
+
                     return (
                       <g className="pointer-events-none">
                         <path
@@ -803,6 +837,25 @@ export function InfraCanvas({
                           markerEnd="url(#arrowhead)"
                           filter="url(#edgeGlow)"
                         />
+                        {/* preview endpoint knot (source) */}
+                        <circle cx={sx} cy={sy} r="3" fill="hsl(var(--primary))" className="opacity-95" />
+                        {/* NEW: "linking" midpoint cue */}
+                        <g transform={`translate(${mx}, ${my - 8})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            textAnchor="middle"
+                            alignmentBaseline="middle"
+                            fontSize="9"
+                            fill="hsl(var(--foreground))"
+                            stroke="hsl(var(--background))"
+                            strokeWidth="2"
+                            paintOrder="stroke"
+                            className="opacity-90"
+                          >
+                            linking…
+                          </text>
+                        </g>
                       </g>
                     );
                   })()
