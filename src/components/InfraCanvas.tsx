@@ -434,47 +434,78 @@ export function InfraCanvas({
         <CardContent>
           <div className="mb-3 flex flex-wrap items-center gap-3 overflow-x-auto">
             <div className="text-xs text-muted-foreground">Drag to create:</div>
+            {/* Animate chip while dragging - use wrapper div to receive native HTML drag events */}
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "db")}
               onDragEnd={() => setDraggingType(null)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-primary/10 hover:text-primary hover:ring-1 hover:ring-primary/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${draggingType === "db" ? "ring-2 ring-primary/60 animate-pulse" : ""}`}
-              title="Drag to canvas"
-              aria-label="Drag to create Database node"
-              role="button"
-              tabIndex={0}
-              data-type="db"
+              className="inline-block"
             >
-              <Database className="h-4 w-4" />
-              <span className="font-medium">Database</span>
+              <motion.div
+                animate={
+                  draggingType === "db"
+                    ? { scale: 1.05, y: -2 }
+                    : { scale: 1, y: 0 }
+                }
+                transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-primary/10 hover:text-primary hover:ring-1 hover:ring-primary/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${draggingType === "db" ? "ring-2 ring-primary/60" : ""}`}
+                title="Drag to canvas"
+                aria-label="Drag to create Database node"
+                role="button"
+                tabIndex={0}
+                data-type="db"
+              >
+                <Database className="h-4 w-4" />
+                <span className="font-medium">Database</span>
+              </motion.div>
             </div>
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "lb")}
               onDragEnd={() => setDraggingType(null)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-accent/10 hover:text-accent hover:ring-1 hover:ring-accent/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${draggingType === "lb" ? "ring-2 ring-accent/60 animate-pulse" : ""}`}
-              title="Drag to canvas"
-              aria-label="Drag to create Load Balancer node"
-              role="button"
-              tabIndex={0}
-              data-type="lb"
+              className="inline-block"
             >
-              <Scale className="h-4 w-4" />
-              <span className="font-medium">Load Balancer</span>
+              <motion.div
+                animate={
+                  draggingType === "lb"
+                    ? { scale: 1.05, y: -2 }
+                    : { scale: 1, y: 0 }
+                }
+                transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-accent/10 hover:text-accent hover:ring-1 hover:ring-accent/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${draggingType === "lb" ? "ring-2 ring-accent/60" : ""}`}
+                title="Drag to canvas"
+                aria-label="Drag to create Load Balancer node"
+                role="button"
+                tabIndex={0}
+                data-type="lb"
+              >
+                <Scale className="h-4 w-4" />
+                <span className="font-medium">Load Balancer</span>
+              </motion.div>
             </div>
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "api")}
               onDragEnd={() => setDraggingType(null)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-ring/10 hover:text-ring hover:ring-1 hover:ring-ring/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${draggingType === "api" ? "ring-2 ring-ring/60 animate-pulse" : ""}`}
-              title="Drag to canvas"
-              aria-label="Drag to create API Server node"
-              role="button"
-              tabIndex={0}
-              data-type="api"
+              className="inline-block"
             >
-              <Server className="h-4 w-4" />
-              <span className="font-medium">API Server</span>
+              <motion.div
+                animate={
+                  draggingType === "api"
+                    ? { scale: 1.05, y: -2 }
+                    : { scale: 1, y: 0 }
+                }
+                transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-ring/10 hover:text-ring hover:ring-1 hover:ring-ring/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${draggingType === "api" ? "ring-2 ring-ring/60" : ""}`}
+                title="Drag to canvas"
+                aria-label="Drag to create API Server node"
+                role="button"
+                tabIndex={0}
+                data-type="api"
+              >
+                <Server className="h-4 w-4" />
+                <span className="font-medium">API Server</span>
+              </motion.div>
             </div>
           </div>
 
@@ -501,6 +532,14 @@ export function InfraCanvas({
             role="application"
             aria-label="Infrastructure canvas. Drag to pan, mouse wheel with Ctrl or Cmd to zoom, drag items from palette to create nodes."
           >
+            {/* Animated glow while dragging over */}
+            <motion.div
+              className="absolute inset-0 pointer-events-none rounded-md ring-2 ring-primary/60"
+              initial={false}
+              animate={{ opacity: isDragOver ? 1 : 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            />
+
             {/* Floating zoom controls inside canvas to avoid stretching layout */}
             <div className="absolute top-2 right-2 z-10 hidden sm:flex items-center">
               <div className="flex items-center gap-1 rounded-full border bg-card/70 backdrop-blur px-1.5 py-1 shadow-sm">
@@ -568,14 +607,26 @@ export function InfraCanvas({
 
               {/* Drop pulse animation marker */}
               {dropPulse && (
-                <motion.span
-                  key={dropPulse.key}
-                  className="absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/50 bg-primary/20 pointer-events-none"
-                  style={{ left: dropPulse.x, top: dropPulse.y }}
-                  initial={{ scale: 0.6, opacity: 0.5 }}
-                  animate={{ scale: 1.4, opacity: 0 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                />
+                <>
+                  {/* inner pulse */}
+                  <motion.span
+                    key={`${dropPulse.key}-inner`}
+                    className="absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/60 bg-primary/20 pointer-events-none"
+                    style={{ left: dropPulse.x, top: dropPulse.y }}
+                    initial={{ scale: 0.6, opacity: 0.5 }}
+                    animate={{ scale: 1.4, opacity: 0 }}
+                    transition={{ duration: 0.45, ease: "easeOut" }}
+                  />
+                  {/* outer subtle ring for a refined finish */}
+                  <motion.span
+                    key={`${dropPulse.key}-outer`}
+                    className="absolute h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-transparent pointer-events-none"
+                    style={{ left: dropPulse.x, top: dropPulse.y }}
+                    initial={{ scale: 0.7, opacity: 0.35 }}
+                    animate={{ scale: 1.6, opacity: 0 }}
+                    transition={{ duration: 0.65, ease: "easeOut" }}
+                  />
+                </>
               )}
 
               {nodes.map((n) => (
