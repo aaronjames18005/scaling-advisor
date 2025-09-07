@@ -420,29 +420,41 @@ export function InfraCanvas({
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "db")}
-              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-primary/10 hover:text-primary cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-primary/10 hover:text-primary hover:ring-1 hover:ring-primary/30 cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               title="Drag to canvas"
               aria-label="Drag to create Database node"
+              role="button"
+              tabIndex={0}
+              data-type="db"
             >
-              🗄️ Database
+              <span className="text-base leading-none">🗄️</span>
+              <span className="font-medium">Database</span>
             </div>
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "lb")}
-              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-accent/10 hover:text-accent cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-accent/10 hover:text-accent hover:ring-1 hover:ring-accent/30 cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               title="Drag to canvas"
               aria-label="Drag to create Load Balancer node"
+              role="button"
+              tabIndex={0}
+              data-type="lb"
             >
-              ⚖️ Load Balancer
+              <span className="text-base leading-none">⚖️</span>
+              <span className="font-medium">Load Balancer</span>
             </div>
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "api")}
-              className="px-2 py-1 text-xs rounded-md border bg-card/80 hover:bg-ring/10 hover:text-ring cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-ring/10 hover:text-ring hover:ring-1 hover:ring-ring/30 cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               title="Drag to canvas"
               aria-label="Drag to create API Server node"
+              role="button"
+              tabIndex={0}
+              data-type="api"
             >
-              🖥️ API Server
+              <span className="text-base leading-none">🖥️</span>
+              <span className="font-medium">API Server</span>
             </div>
           </div>
 
