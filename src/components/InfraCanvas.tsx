@@ -41,6 +41,33 @@ export function InfraCanvas({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
+  // Safety helpers for numeric operations (avoid NaN/Infinity)
+  const clampZoom = (z: number) => Math.min(3, Math.max(0.5, Number.isFinite(z) ? z : 1));
+  const safeNum = (n: number, fallback = 0) => (Number.isFinite(n) ? n : fallback);
+
+  useEffect(() => {
+    // Ensure we don't end up with invalid pan/zoom after re-renders
+    setZoom((z) => clampZoom(z));
+    setPan((p) => ({ x: safeNum(p.x), y: safeNum(p.y) }));
+  }, []);
+
+  // Prevent stuck drag/pan when mouseup happens outside the canvas
+  useEffect(() => {
+    const handleWindowMouseUp = () => {
+      if (draggingId || isPanning) {
+        setDraggingId(null);
+        setIsPanning(false);
+        panStart.current = null;
+      }
+    };
+    window.addEventListener("mouseup", handleWindowMouseUp);
+    window.addEventListener("blur", handleWindowMouseUp);
+    return () => {
+      window.removeEventListener("mouseup", handleWindowMouseUp);
+      window.removeEventListener("blur", handleWindowMouseUp);
+    };
+  }, [draggingId, isPanning]);
+
   const addNode = (type: NodeType) => {
     const id = `${type}-${Math.random().toString(36).slice(2, 8)}`;
     const defaultProps =
@@ -116,9 +143,13 @@ export function InfraCanvas({
 
     // Panning
     if (isPanning && panStart.current) {
-      const nextX = e.clientX - panStart.current.x;
-      const nextY = e.clientY - panStart.current.y;
-      setPan({ x: nextX, y: nextY });
+      try {
+        const nextX = safeNum(e.clientX - panStart.current.x, pan.x);
+        const nextY = safeNum(e.clientY - panStart.current.y, pan.y);
+        setPan({ x: nextX, y: nextY });
+      } catch (err) {
+        console.warn("Pan error:", err);
+      }
       return;
     }
 
@@ -135,8 +166,8 @@ export function InfraCanvas({
         n.id === draggingId
           ? {
               ...n,
-              x: Math.max(0, Math.floor(nextX)),
-              y: Math.max(0, Math.floor(nextY)),
+              x: Math.max(0, Math.floor(safeNum(nextX, n.x))),
+              y: Math.max(0, Math.floor(safeNum(nextY, n.y))),
             }
           : n
       )
@@ -188,28 +219,37 @@ export function InfraCanvas({
   const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
-    const delta = -e.deltaY;
-    const factor = delta > 0 ? 1.1 : 0.9;
-    const nextZoom = Math.min(3, Math.max(0.5, zoom * factor));
+    try {
+      const delta = -e.deltaY;
+      if (!Number.isFinite(delta) || delta === 0) return;
 
-    if (!canvasRef.current) {
-      setZoom(nextZoom);
-      return;
+      const factor = delta > 0 ? 1.1 : 0.9;
+      const proposedZoom = clampZoom(zoom * factor);
+
+      if (!canvasRef.current) {
+        setZoom(proposedZoom);
+        return;
+      }
+
+      const rect = canvasRef.current.getBoundingClientRect();
+      const cursorX = safeNum(e.clientX - rect.left);
+      const cursorY = safeNum(e.clientY - rect.top);
+
+      const worldXBefore = (cursorX - pan.x) / zoom;
+      const worldYBefore = (cursorY - pan.y) / zoom;
+
+      const newPanX = cursorX - worldXBefore * proposedZoom;
+      const newPanY = cursorY - worldYBefore * proposedZoom;
+
+      // Apply clamped/safe values
+      setZoom(proposedZoom);
+      setPan({ x: safeNum(newPanX, pan.x), y: safeNum(newPanY, pan.y) });
+    } catch (err) {
+      console.warn("Zoom error:", err);
+      // Fallback to safe defaults if something goes wrong
+      setZoom((z) => clampZoom(z));
+      setPan((p) => ({ x: safeNum(p.x), y: safeNum(p.y) }));
     }
-
-    // Zoom toward cursor point (keep cursor stable)
-    const rect = canvasRef.current.getBoundingClientRect();
-    const cursorX = e.clientX - rect.left;
-    const cursorY = e.clientY - rect.top;
-
-    const worldXBefore = (cursorX - pan.x) / zoom;
-    const worldYBefore = (cursorY - pan.y) / zoom;
-
-    const newPanX = cursorX - worldXBefore * nextZoom;
-    const newPanY = cursorY - worldYBefore * nextZoom;
-
-    setZoom(nextZoom);
-    setPan({ x: newPanX, y: newPanY });
   };
 
   const iconForType = (type: NodeType) => {
