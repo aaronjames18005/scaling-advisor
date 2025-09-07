@@ -213,7 +213,7 @@ export default function NewProject() {
       });
 
       toast.success("Project created successfully!");
-      navigate(`/projects/${projectId}`);
+      navigate(`/dashboard`);
     } catch (error) {
       console.error("Error creating project:", error);
       toast.error("Failed to create project. Please try again.");
