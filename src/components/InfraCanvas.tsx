@@ -35,6 +35,10 @@ export function InfraCanvas({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef<{ x: number; y: number } | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const addNode = (type: NodeType) => {
     const id = `${type}-${Math.random().toString(36).slice(2, 8)}`;
@@ -87,32 +91,51 @@ export function InfraCanvas({
     id: string
   ) => {
     e.stopPropagation();
-    const rect = (e.currentTarget.parentElement as HTMLDivElement)?.getBoundingClientRect();
+    const rect = (canvasRef.current as HTMLDivElement)?.getBoundingClientRect();
     const node = nodes.find((n) => n.id === id);
     if (!rect || !node) return;
     setSelectedId(id);
     setDraggingId(id);
+
+    // account for pan & zoom
+    const localX = (e.clientX - rect.left - pan.x) / zoom;
+    const localY = (e.clientY - rect.top - pan.y) / zoom;
+
     dragOffset.current = {
-      x: e.clientX - (rect.left + node.x),
-      y: e.clientY - (rect.top + node.y),
+      x: localX - node.x,
+      y: localY - node.y,
     };
   };
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!draggingId || !canvasRef.current) return;
+    if (!canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
-    const nextX = e.clientX - rect.left - dragOffset.current.x;
-    const nextY = e.clientY - rect.top - dragOffset.current.y;
+
+    // Panning
+    if (isPanning && panStart.current) {
+      const nextX = e.clientX - panStart.current.x;
+      const nextY = e.clientY - panStart.current.y;
+      setPan({ x: nextX, y: nextY });
+      return;
+    }
+
+    // Node dragging
+    if (!draggingId) return;
+    const localX = (e.clientX - rect.left - pan.x) / zoom;
+    const localY = (e.clientY - rect.top - pan.y) / zoom;
+
+    const nextX = localX - dragOffset.current.x;
+    const nextY = localY - dragOffset.current.y;
 
     setNodes((prev) =>
       prev.map((n) =>
         n.id === draggingId
           ? {
               ...n,
-              x: Math.max(0, Math.min(nextX, rect.width - 120)),
-              y: Math.max(0, Math.min(nextY, rect.height - 60)),
+              x: Math.max(0, Math.floor(nextX)),
+              y: Math.max(0, Math.floor(nextY)),
             }
           : n
       )
@@ -121,6 +144,8 @@ export function InfraCanvas({
 
   const onMouseUp = () => {
     setDraggingId(null);
+    setIsPanning(false);
+    panStart.current = null;
   };
 
   const onDragStartPalette = (e: React.DragEvent<HTMLDivElement>, type: NodeType) => {
@@ -147,17 +172,43 @@ export function InfraCanvas({
     const type = e.dataTransfer.getData("text/plain") as NodeType;
     if (!type || !["db", "lb", "api"].includes(type)) return;
 
-    const x = e.clientX - rect.left - 14; // small offset to center better
-    const y = e.clientY - rect.top - 14;
-    // Constrain within canvas
-    const maxX = rect.width - 120; // node width
-    const maxY = rect.height - 60; // node height
-    addNodeAt(
-      type,
-      Math.max(0, Math.min(x, maxX)),
-      Math.max(0, Math.min(y, maxY))
-    );
-    setIsDragOver(false); // add: reset state
+    // Convert to inner (zoomed/panned) coordinates
+    const localX = (e.clientX - rect.left - pan.x) / zoom;
+    const localY = (e.clientY - rect.top - pan.y) / zoom;
+
+    const x = localX - 14;
+    const y = localY - 14;
+
+    addNodeAt(type, Math.max(0, Math.floor(x)), Math.max(0, Math.floor(y)));
+    setIsDragOver(false);
+  };
+
+  // Wheel zoom (Ctrl/Cmd + wheel)
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const delta = -e.deltaY;
+    const factor = delta > 0 ? 1.1 : 0.9;
+    const nextZoom = Math.min(3, Math.max(0.5, zoom * factor));
+
+    if (!canvasRef.current) {
+      setZoom(nextZoom);
+      return;
+    }
+
+    // Zoom toward cursor point (keep cursor stable)
+    const rect = canvasRef.current.getBoundingClientRect();
+    const cursorX = e.clientX - rect.left;
+    const cursorY = e.clientY - rect.top;
+
+    const worldXBefore = (cursorX - pan.x) / zoom;
+    const worldYBefore = (cursorY - pan.y) / zoom;
+
+    const newPanX = cursorX - worldXBefore * nextZoom;
+    const newPanY = cursorY - worldYBefore * nextZoom;
+
+    setZoom(nextZoom);
+    setPan({ x: newPanX, y: newPanY });
   };
 
   const iconForType = (type: NodeType) => {
@@ -273,6 +324,25 @@ export function InfraCanvas({
             <Button variant="outline" onClick={() => addNode("api")} className="transition-transform hover:scale-[1.02]">
               Add API
             </Button>
+            {/* Zoom controls */}
+            <div className="hidden sm:flex items-center gap-1 ml-2">
+              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.max(0.5, z * 0.9))} aria-label="Zoom out">
+                -
+              </Button>
+              <div className="px-2 text-xs text-muted-foreground tabular-nums">{Math.round(zoom * 100)}%</div>
+              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.min(3, z * 1.1))} aria-label="Zoom in">
+                +
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setZoom(1);
+                  setPan({ x: 0, y: 0 });
+                }}
+              >
+                Reset
+              </Button>
+            </div>
             <Button onClick={handleGenerate} className="glow-primary">
               Generate
             </Button>
@@ -318,77 +388,94 @@ export function InfraCanvas({
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
-            onMouseDown={() => setSelectedId(null)}
+            onMouseDown={(e) => {
+              // start panning only if background is clicked (not a node)
+              if ((e.target as HTMLElement).closest("[data-node]")) return;
+              setSelectedId(null);
+              setIsPanning(true);
+              panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+            }}
             onDragOver={onDragOverCanvas}
             onDragEnter={() => setIsDragOver(true)}
             onDragLeave={onDragLeaveCanvas}
             onDrop={onDropCanvas}
+            onWheel={onWheel}
           >
-            {/* background grid */}
-            <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
-            {/* drop hint */}
-            {isDragOver && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="px-3 py-1.5 rounded-md text-xs bg-background/80 border shadow-sm">
-                  Release to add node
+            {/* Inner world: pans & zooms together with nodes and grid */}
+            <div
+              className="absolute inset-0"
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transformOrigin: "0 0",
+              }}
+            >
+              {/* background grid that pans/zooms with content */}
+              <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
+              {/* drop hint */}
+              {isDragOver && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="px-3 py-1.5 rounded-md text-xs bg-background/80 border shadow-sm">
+                    Release to add node
+                  </div>
                 </div>
-              </div>
-            )}
-            {nodes.map((n) => (
-              <div
-                key={n.id}
-                className={`absolute w-28 select-none rounded-lg border shadow-sm transition-all duration-150 ${
-                  selectedId === n.id ? "ring-2 ring-primary glow-primary shadow-lg" : "hover:shadow-md"
-                } ${
-                  draggingId === n.id ? "scale-[0.98] cursor-grabbing" : "cursor-move"
-                } backdrop-blur-sm ${
-                  n.type === "db"
-                    ? "bg-primary/10 border-primary/30 hover:bg-primary/15"
-                    : n.type === "lb"
-                    ? "bg-accent/10 border-accent/30 hover:bg-accent/15"
-                    : "bg-ring/10 border-ring/30 hover:bg-ring/15"
-                }`}
-                style={{ left: n.x, top: n.y }}
-                onMouseDown={(e) => onMouseDownNode(e, n.id)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedId(n.id);
-                }}
-                title={`${labelForType(n.type)} • Drag to move`}
-                aria-label={`${labelForType(n.type)} node`}
-              >
+              )}
+              {nodes.map((n) => (
                 <div
-                  className={`px-2 py-1 text-[11px] font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
+                  key={n.id}
+                  data-node
+                  className={`absolute w-28 select-none rounded-lg border shadow-sm transition-all duration-150 ${
+                    selectedId === n.id ? "ring-2 ring-primary glow-primary shadow-lg" : "hover:shadow-md"
+                  } ${
+                    draggingId === n.id ? "scale-[0.98] cursor-grabbing" : "cursor-move"
+                  } backdrop-blur-sm ${
                     n.type === "db"
-                      ? "bg-primary/15 text-primary"
+                      ? "bg-primary/10 border-primary/30 hover:bg-primary/15"
                       : n.type === "lb"
-                      ? "bg-accent/15 text-accent"
-                      : "bg-ring/15 text-ring"
+                      ? "bg-accent/10 border-accent/30 hover:bg-accent/15"
+                      : "bg-ring/10 border-ring/30 hover:bg-ring/15"
                   }`}
+                  style={{ left: n.x, top: n.y }}
+                  onMouseDown={(e) => onMouseDownNode(e, n.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedId(n.id);
+                  }}
+                  title={`${labelForType(n.type)} • Drag to move`}
+                  aria-label={`${labelForType(n.type)} node`}
                 >
-                  <span className="inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-current" />
-                  <span>{iconForType(n.type)}</span>
-                  <span className="truncate uppercase">{labelForType(n.type)}</span>
+                  <div
+                    className={`px-2 py-1 text-[11px] font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
+                      n.type === "db"
+                        ? "bg-primary/15 text-primary"
+                        : n.type === "lb"
+                        ? "bg-accent/15 text-accent"
+                        : "bg-ring/15 text-ring"
+                    }`}
+                  >
+                    <span className="inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-current" />
+                    <span>{iconForType(n.type)}</span>
+                    <span className="truncate uppercase">{labelForType(n.type)}</span>
+                  </div>
+                  <div className="p-2 text-[10px] text-muted-foreground space-x-1">
+                    {n.type === "db" && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                        engine: {n.props?.engine ?? "postgres"}
+                      </span>
+                    )}
+                    {n.type === "api" && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-ring/10 text-ring border border-ring/20">
+                        replicas: {n.props?.replicas ?? 2}
+                      </span>
+                    )}
+                    {n.type === "lb" && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
+                        public: true
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="p-2 text-[10px] text-muted-foreground space-x-1">
-                  {n.type === "db" && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                      engine: {n.props?.engine ?? "postgres"}
-                    </span>
-                  )}
-                  {n.type === "api" && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-ring/10 text-ring border border-ring/20">
-                      replicas: {n.props?.replicas ?? 2}
-                    </span>
-                  )}
-                  {n.type === "lb" && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
-                      public: true
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
