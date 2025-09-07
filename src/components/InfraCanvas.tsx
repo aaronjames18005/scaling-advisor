@@ -854,24 +854,6 @@ export function InfraCanvas({
                           className="opacity-90"
                           vectorEffect="non-scaling-stroke"
                         />
-
-                        {/* midpoint label with white fill and dark stroke for crispness */}
-                        <g transform={`translate(${mx}, ${my - 8})`}>
-                          <text
-                            x={0}
-                            y={0}
-                            textAnchor="middle"
-                            alignmentBaseline="middle"
-                            fontSize="14"
-                            fontWeight={800}
-                            fill="#ffffff"
-                            stroke="black"
-                            strokeWidth={2.2}
-                            paintOrder="stroke"
-                          >
-                            linked
-                          </text>
-                        </g>
                       </g>
                     );
                   })
@@ -960,24 +942,6 @@ export function InfraCanvas({
                         {/* preview source knot with outline */}
                         <circle cx={sx} cy={sy} r="4.6" fill="#ffffff" className="opacity-100" />
                         <circle cx={sx} cy={sy} r="6" fill="none" stroke="oklch(var(--ring))" strokeWidth={1.6} className="opacity-90" vectorEffect="non-scaling-stroke" />
-
-                        {/* "linking…" label, white with dark stroke */}
-                        <g transform={`translate(${mx}, ${my - 8})`}>
-                          <text
-                            x={0}
-                            y={0}
-                            textAnchor="middle"
-                            alignmentBaseline="middle"
-                            fontSize="14"
-                            fontWeight={800}
-                            fill="#ffffff"
-                            stroke="black"
-                            strokeWidth={2.2}
-                            paintOrder="stroke"
-                          >
-                            linking…
-                          </text>
-                        </g>
                       </g>
                     );
                   })()
