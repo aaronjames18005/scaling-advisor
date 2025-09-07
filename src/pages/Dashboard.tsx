@@ -414,6 +414,7 @@ export default function Dashboard() {
                               </DialogHeader>
                               <InfraCanvas
                                 projectId={project._id as any}
+                                projectName={project.name}
                                 onGenerated={() => {
                                   // keep dialog open; user can close manually
                                 }}

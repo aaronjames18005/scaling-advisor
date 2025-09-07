@@ -22,9 +22,11 @@ type CanvasNode = {
 export function InfraCanvas({
   projectId,
   onGenerated,
+  projectName,
 }: {
   projectId: string;
   onGenerated?: () => void;
+  projectName: string;
 }) {
   const generateFromCanvas = useMutation(api.configurations.generateFromCanvas);
 
@@ -151,6 +153,53 @@ export function InfraCanvas({
     );
   };
 
+  const { terraformPreview, k8sPreview } = useMemo(() => {
+    const slug =
+      projectName?.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") || "app";
+    const hasLB = nodes.some((n) => n.type === "lb");
+    const apiNodes = nodes.filter((n) => n.type === "api");
+    const dbNode = nodes.find((n) => n.type === "db");
+    const dbEngine = dbNode?.props?.engine === "mysql" ? "mysql" : "postgres";
+
+    // Terraform preview (concise)
+    const tfHeader = `# Terraform (preview) for ${projectName}\nvariable "aws_region" { default = "us-west-2" }\nprovider "aws" { region = var.aws_region }\n`;
+    const tfVPC = `# (preview) minimal VPC + security group omitted for brevity\n# Assume base VPC, subnets, and SG are defined elsewhere in generated output\n`;
+    const tfDB =
+      dbNode
+        ? dbEngine === "postgres"
+          ? `resource "aws_db_instance" "app" {\n  identifier = "${slug}-db"\n  engine = "postgres"\n  instance_class = "db.t3.micro"\n  allocated_storage = 20\n  username = "postgres"\n  password = "change-me"\n  skip_final_snapshot = true\n}\n`
+          : `resource "aws_db_instance" "app" {\n  identifier = "${slug}-db"\n  engine = "mysql"\n  instance_class = "db.t3.micro"\n  allocated_storage = 20\n  username = "admin"\n  password = "change-me"\n  skip_final_snapshot = true\n}\n`
+        : "";
+    const tfLB = hasLB
+      ? `resource "aws_lb" "main" {\n  name               = "${slug}-alb"\n  internal           = false\n  load_balancer_type = "application"\n}\n`
+      : "";
+    const tfHint = apiNodes.length
+      ? `# Hint: add target group + listener to route traffic to your services\n`
+      : "";
+
+    const terraformPreview = `${tfHeader}\n${tfVPC}\n${tfDB}${tfLB}${tfHint}`.trim() + "\n";
+
+    // Kubernetes preview (concise)
+    const baseDeployHeader = `# Kubernetes (preview) for ${projectName}\n`;
+    const deployments =
+      apiNodes.length === 0
+        ? `# No API nodes yet. Add an API node to preview deployments.`
+        : apiNodes
+            .map((n, i) => {
+              const replicas = Math.max(1, Math.min(10, Number(n.props?.replicas ?? 2)));
+              return `---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ${slug}-api-${i + 1}\n  labels:\n    app: ${slug}-api\nspec:\n  replicas: ${replicas}\n  selector:\n    matchLabels:\n      app: ${slug}-api\n  template:\n    metadata:\n      labels:\n        app: ${slug}-api\n    spec:\n      containers:\n      - name: api\n        image: ${slug}:latest\n        ports:\n        - containerPort: 3000\n`;
+            })
+            .join("\n");
+    const service =
+      apiNodes.length > 0
+        ? `---\napiVersion: v1\nkind: Service\nmetadata:\n  name: ${slug}-api-svc\nspec:\n  selector:\n    app: ${slug}-api\n  ports:\n    - protocol: TCP\n      port: 80\n      targetPort: 3000\n  type: ${hasLB ? "LoadBalancer" : "ClusterIP"}\n`
+        : "";
+
+    const k8sPreview = `${baseDeployHeader}\n${deployments}\n${service}`.trim() + "\n";
+
+    return { terraformPreview, k8sPreview };
+  }, [nodes, projectName]);
+
   return (
     <div className="space-y-4">
       <Card className="glass">
@@ -203,6 +252,31 @@ export function InfraCanvas({
                 </div>
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="glass">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Live Config Preview</CardTitle>
+          <div className="text-xs text-muted-foreground">
+            Updates as you drag or edit node properties
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-md border bg-muted/30">
+              <div className="px-3 py-2 border-b text-xs font-semibold">Terraform</div>
+              <pre className="p-3 text-xs overflow-auto max-h-72 whitespace-pre-wrap">
+                {terraformPreview}
+              </pre>
+            </div>
+            <div className="rounded-md border bg-muted/30">
+              <div className="px-3 py-2 border-b text-xs font-semibold">Kubernetes</div>
+              <pre className="p-3 text-xs overflow-auto max-h-72 whitespace-pre-wrap">
+                {k8sPreview}
+              </pre>
+            </div>
           </div>
         </CardContent>
       </Card>
