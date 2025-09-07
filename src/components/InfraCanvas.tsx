@@ -416,7 +416,7 @@ export function InfraCanvas({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-3 flex items-center gap-3">
+          <div className="mb-3 flex flex-wrap items-center gap-3 overflow-x-auto">
             <div className="text-xs text-muted-foreground">Drag to create:</div>
             <div
               draggable
@@ -461,7 +461,7 @@ export function InfraCanvas({
 
           <div
             ref={canvasRef}
-            className={`relative h-[60vh] md:h-[480px] rounded-md border overflow-hidden transition-colors ${
+            className={`relative h-[55vh] sm:h-[60vh] md:h-[65vh] lg:h-[70vh] rounded-md border overflow-hidden transition-colors ${
               isDragOver ? "ring-2 ring-primary/60 bg-primary/5" : "bg-gradient-to-br from-background to-muted/40"
             } select-none touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
             onMouseMove={onMouseMove}
@@ -534,7 +534,7 @@ export function InfraCanvas({
                 willChange: "transform",
               }}
             >
-              {/* background grid that pans/zooms with content */}
+              {/* background grid */}
               <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
               {/* drop hint */}
               {isDragOver && (
@@ -554,7 +554,7 @@ export function InfraCanvas({
                   transition={{ duration: 0.15 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`absolute w-32 md:w-36 select-none rounded-lg border shadow-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 ${
+                  className={`absolute w-28 sm:w-32 md:w-36 select-none rounded-lg border shadow-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 ${
                     selectedId === n.id ? "ring-2 ring-primary glow-primary shadow-lg" : "hover:shadow-md"
                   } ${
                     draggingId === n.id ? "scale-[0.98] cursor-grabbing" : "cursor-move"
@@ -602,7 +602,7 @@ export function InfraCanvas({
                     <span className="inline-block text-[14px] leading-none"> {iconForType(n.type)}</span>
                     <span className="truncate uppercase">{labelForType(n.type)}</span>
                   </div>
-                  <div className="p-2 text-[11px] text-muted-foreground space-x-1">
+                  <div className="p-2 text-[10px] sm:text-[11px] text-muted-foreground space-x-1">
                     {n.type === "db" && (
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                         engine: {n.props?.engine ?? "postgres"}
