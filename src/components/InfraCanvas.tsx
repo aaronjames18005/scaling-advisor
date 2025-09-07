@@ -683,7 +683,7 @@ export function InfraCanvas({
               )}
 
               {/* Connections layer (SVG in world coordinates) */}
-              <svg className="absolute inset-0 overflow-visible pointer-events-none">
+              <svg className="absolute inset-0 overflow-visible pointer-events-none z-50 isolate mix-blend-normal">
                 {/* Arrowhead marker definition for direction cues */}
                 <defs>
                   <marker
