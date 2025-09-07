@@ -151,6 +151,7 @@ export function InfraCanvas({
     id: string
   ) => {
     e.stopPropagation();
+    e.preventDefault(); // Prevent text selection and browser drag interference
     const rect = (canvasRef.current as HTMLDivElement)?.getBoundingClientRect();
     const node = nodes.find((n) => n.id === id);
     if (!rect || !node) return;
@@ -462,7 +463,7 @@ export function InfraCanvas({
             ref={canvasRef}
             className={`relative h-[60vh] md:h-[480px] rounded-md border overflow-hidden transition-colors ${
               isDragOver ? "ring-2 ring-primary/60 bg-primary/5" : "bg-gradient-to-br from-background to-muted/40"
-            }`}
+            } select-none touch-none`}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
@@ -477,6 +478,7 @@ export function InfraCanvas({
             onDragLeave={onDragLeaveCanvas}
             onDrop={onDropCanvas}
             onWheel={onWheel}
+            onContextMenu={(e) => e.preventDefault()}
           >
             {/* Floating zoom controls inside canvas to avoid stretching layout */}
             <div className="absolute top-2 right-2 z-10 hidden sm:flex items-center">
@@ -543,6 +545,7 @@ export function InfraCanvas({
                 <motion.div
                   key={n.id}
                   data-node
+                  draggable={false}
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.15 }}
