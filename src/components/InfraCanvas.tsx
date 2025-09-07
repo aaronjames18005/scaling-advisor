@@ -42,6 +42,10 @@ export function InfraCanvas({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
+  // Drag UI state for palette highlight + drop pulse
+  const [draggingType, setDraggingType] = useState<NodeType | null>(null);
+  const [dropPulse, setDropPulse] = useState<{ x: number; y: number; key: number } | null>(null);
+
   // Safety helpers for numeric operations (avoid NaN/Infinity)
   const clampZoom = (z: number) => Math.min(2, Math.max(0.9, Number.isFinite(z) ? z : 1)); // tighten zoom bounds for better proportions
   const safeNum = (n: number, fallback = 0) => (Number.isFinite(n) ? n : fallback);
@@ -217,6 +221,8 @@ export function InfraCanvas({
     e.dataTransfer.setData("text/plain", type);
     // Indicate move to user agents
     e.dataTransfer.effectAllowed = "copyMove";
+    // Add visual state
+    setDraggingType(type);
   };
 
   const onDragOverCanvas = (e: React.DragEvent<HTMLDivElement>) => {
@@ -228,6 +234,8 @@ export function InfraCanvas({
 
   const onDragLeaveCanvas = () => {
     setIsDragOver(false);
+    // If leaving the canvas entirely, remove drag highlight
+    setDraggingType(null);
   };
 
   const onDropCanvas = (e: React.DragEvent<HTMLDivElement>) => {
@@ -246,6 +254,12 @@ export function InfraCanvas({
 
     addNodeAt(type, Math.max(0, Math.floor(x)), Math.max(0, Math.floor(y)));
     setIsDragOver(false);
+
+    // Drop pulse animation (brief ripple at drop point)
+    setDropPulse({ x: Math.max(0, Math.floor(localX)), y: Math.max(0, Math.floor(localY)), key: Date.now() });
+    setDraggingType(null);
+    // Auto-clear pulse after animation
+    setTimeout(() => setDropPulse((p) => (p && p.key === (dropPulse?.key ?? 0) ? null : p)), 520);
   };
 
   // Wheel zoom (Ctrl/Cmd + wheel)
@@ -423,7 +437,8 @@ export function InfraCanvas({
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "db")}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-primary/10 hover:text-primary hover:ring-1 hover:ring-primary/30 cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              onDragEnd={() => setDraggingType(null)}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-primary/10 hover:text-primary hover:ring-1 hover:ring-primary/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${draggingType === "db" ? "ring-2 ring-primary/60 animate-pulse" : ""}`}
               title="Drag to canvas"
               aria-label="Drag to create Database node"
               role="button"
@@ -436,7 +451,8 @@ export function InfraCanvas({
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "lb")}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-accent/10 hover:text-accent hover:ring-1 hover:ring-accent/30 cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              onDragEnd={() => setDraggingType(null)}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-accent/10 hover:text-accent hover:ring-1 hover:ring-accent/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${draggingType === "lb" ? "ring-2 ring-accent/60 animate-pulse" : ""}`}
               title="Drag to canvas"
               aria-label="Drag to create Load Balancer node"
               role="button"
@@ -449,7 +465,8 @@ export function InfraCanvas({
             <div
               draggable
               onDragStart={(e) => onDragStartPalette(e, "api")}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-ring/10 hover:text-ring hover:ring-1 hover:ring-ring/30 cursor-grab active:cursor-grabbing select-none transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              onDragEnd={() => setDraggingType(null)}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full border bg-card/70 backdrop-blur hover:bg-ring/10 hover:text-ring hover:ring-1 hover:ring-ring/30 cursor-grab active:cursor-grabbing select-none transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${draggingType === "api" ? "ring-2 ring-ring/60 animate-pulse" : ""}`}
               title="Drag to canvas"
               aria-label="Drag to create API Server node"
               role="button"
@@ -548,6 +565,19 @@ export function InfraCanvas({
                   </div>
                 </div>
               )}
+
+              {/* Drop pulse animation marker */}
+              {dropPulse && (
+                <motion.span
+                  key={dropPulse.key}
+                  className="absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/50 bg-primary/20 pointer-events-none"
+                  style={{ left: dropPulse.x, top: dropPulse.y }}
+                  initial={{ scale: 0.6, opacity: 0.5 }}
+                  animate={{ scale: 1.4, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+              )}
+
               {nodes.map((n) => (
                 <motion.div
                   key={n.id}
