@@ -778,31 +778,27 @@ export function InfraCanvas({
                           fill="none"
                           vectorEffect="non-scaling-stroke"
                         />
-                        {/* 3) Main white rope core */}
+                        {/* 3) Main white rope core (remove dash animation to avoid flicker) */}
                         <path
                           d={path}
                           stroke="#ffffff"
                           strokeWidth={isActive ? 2.6 : 2.2} // increased core
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={
-                            isActive
-                              ? "[stroke-dasharray:4_5] animate-[dash_0.8s_linear_infinite] opacity-100"
-                              : "[stroke-dasharray:6_6] animate-[dash_1.1s_linear_infinite] opacity-100"
-                          }
+                          className="opacity-100"
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter={isActive ? "url(#edgeGlow)" : undefined}
                           vectorEffect="non-scaling-stroke"
                         />
-                        {/* 4) Fine braided texture overlay */}
+                        {/* 4) Fine braided texture overlay (remove animation class to prevent flicker) */}
                         <path
                           d={path}
                           stroke="#ffffff"
                           strokeWidth={0.7} // slightly thicker texture
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className=" [stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
+                          className="[stroke-dasharray:1.5_4] opacity-70"
                           fill="none"
                           vectorEffect="non-scaling-stroke"
                         />
@@ -819,7 +815,7 @@ export function InfraCanvas({
                           vectorEffect="non-scaling-stroke"
                         />
 
-                        {/* Endpoint knot with ring outline + white core */}
+                        {/* Endpoint knot circles unchanged */}
                         <circle
                           cx={sx}
                           cy={sy}
@@ -903,27 +899,27 @@ export function InfraCanvas({
                           fill="none"
                           vectorEffect="non-scaling-stroke"
                         />
-                        {/* preview main white core */}
+                        {/* preview main white core (no animation) */}
                         <path
                           d={path}
                           stroke="#ffffff"
                           strokeWidth={2.2} // increased preview core
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="opacity-100 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]"
+                          className="opacity-100"
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter="url(#edgeGlow)"
                           vectorEffect="non-scaling-stroke"
                         />
-                        {/* preview braided texture */}
+                        {/* preview braided texture (remove animation) */}
                         <path
                           d={path}
                           stroke="#ffffff"
                           strokeWidth={0.7} // increased preview texture
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
+                          className="[stroke-dasharray:1.5_4] opacity-70"
                           fill="none"
                           vectorEffect="non-scaling-stroke"
                         />
