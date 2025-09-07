@@ -697,6 +697,25 @@ export function InfraCanvas({
                   >
                     <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--primary))" />
                   </marker>
+
+                  {/* New: soft gradient for edges */}
+                  <linearGradient id="edgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(var(--ring))" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.95" />
+                  </linearGradient>
+                  <linearGradient id="edgeGradientActive" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.9" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+                  </linearGradient>
+
+                  {/* New: subtle glow for active/hovered edges */}
+                  <filter id="edgeGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
                 </defs>
                 {
                   edges.map((edge) => {
@@ -724,27 +743,34 @@ export function InfraCanvas({
 
                     return (
                       <g key={edge.id} className="pointer-events-none">
+                        {/* subtle base rail */}
                         <path
                           d={path}
                           stroke="hsl(var(--ring))"
-                          strokeWidth={isActive ? 4 : 3}
-                          className={isActive ? "opacity-80" : "opacity-60"}
+                          strokeWidth={isActive ? 4.2 : 3.4}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={isActive ? "opacity-85" : "opacity-60"}
                           fill="none"
                         />
+                        {/* gradient foreground with glow on active */}
                         <path
                           d={path}
-                          stroke="hsl(var(--primary))"
-                          strokeWidth={isActive ? 2 : 1.5}
-                          className={`opacity-80 ${isActive ? "[stroke-dasharray:4_5] animate-[dash_0.9s_linear_infinite]" : "[stroke-dasharray:6_6] animate-[dash_1.2s_linear_infinite]"}`}
+                          stroke={isActive ? "url(#edgeGradientActive)" : "url(#edgeGradient)"}
+                          strokeWidth={isActive ? 2.4 : 1.8}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`opacity-90 ${isActive ? "[stroke-dasharray:4_5] animate-[dash_0.85s_linear_infinite]" : "[stroke-dasharray:6_6] animate-[dash_1.15s_linear_infinite]"}`}
                           fill="none"
                           markerEnd="url(#arrowhead)"
+                          filter={isActive ? "url(#edgeGlow)" : undefined}
                         />
                         <circle
                           cx={tx}
                           cy={ty}
                           r={isActive ? "3.2" : "2.5"}
                           fill="hsl(var(--primary))"
-                          className={isActive ? "opacity-90" : "opacity-80"}
+                          className={isActive ? "opacity-95" : "opacity-85"}
                         />
                       </g>
                     );
@@ -766,7 +792,17 @@ export function InfraCanvas({
                     const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx} ${ty}`;
                     return (
                       <g className="pointer-events-none">
-                        <path d={path} stroke="hsl(var(--primary))" strokeWidth="2" className="opacity-70 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]" fill="none" markerEnd="url(#arrowhead)" />
+                        <path
+                          d={path}
+                          stroke="url(#edgeGradientActive)"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="opacity-85 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]"
+                          fill="none"
+                          markerEnd="url(#arrowhead)"
+                          filter="url(#edgeGlow)"
+                        />
                       </g>
                     );
                   })()
