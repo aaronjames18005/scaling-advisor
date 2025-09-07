@@ -325,7 +325,7 @@ export function InfraCanvas({
             onDrop={onDropCanvas}
           >
             {/* background grid */}
-            <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] opacity-30" />
+            <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
             {/* drop hint */}
             {isDragOver && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -337,14 +337,16 @@ export function InfraCanvas({
             {nodes.map((n) => (
               <div
                 key={n.id}
-                className={`absolute w-28 select-none cursor-move rounded-lg border shadow-sm transition-transform active:scale-[0.98] ${
-                  selectedId === n.id ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md"
+                className={`absolute w-28 select-none rounded-lg border shadow-sm transition-all duration-150 ${
+                  selectedId === n.id ? "ring-2 ring-primary glow-primary shadow-lg" : "hover:shadow-md"
                 } ${
+                  draggingId === n.id ? "scale-[0.98] cursor-grabbing" : "cursor-move"
+                } backdrop-blur-sm ${
                   n.type === "db"
-                    ? "bg-primary/5 border-primary/30"
+                    ? "bg-primary/10 border-primary/30 hover:bg-primary/15"
                     : n.type === "lb"
-                    ? "bg-accent/5 border-accent/30"
-                    : "bg-ring/5 border-ring/30"
+                    ? "bg-accent/10 border-accent/30 hover:bg-accent/15"
+                    : "bg-ring/10 border-ring/30 hover:bg-ring/15"
                 }`}
                 style={{ left: n.x, top: n.y }}
                 onMouseDown={(e) => onMouseDownNode(e, n.id)}
@@ -356,21 +358,34 @@ export function InfraCanvas({
                 aria-label={`${labelForType(n.type)} node`}
               >
                 <div
-                  className={`px-2 py-1 text-xs font-medium flex items-center gap-2 rounded-t-lg ${
+                  className={`px-2 py-1 text-[11px] font-semibold flex items-center gap-2 rounded-t-lg tracking-wide ${
                     n.type === "db"
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/15 text-primary"
                       : n.type === "lb"
-                      ? "bg-accent/10 text-accent"
-                      : "bg-ring/10 text-ring"
+                      ? "bg-accent/15 text-accent"
+                      : "bg-ring/15 text-ring"
                   }`}
                 >
+                  <span className="inline-flex items-center justify-center w-1.5 h-1.5 rounded-full bg-current" />
                   <span>{iconForType(n.type)}</span>
-                  <span className="truncate">{labelForType(n.type)}</span>
+                  <span className="truncate uppercase">{labelForType(n.type)}</span>
                 </div>
-                <div className="p-2 text-[10px] text-muted-foreground">
-                  {n.type === "db" && <span>engine: {n.props?.engine ?? "postgres"}</span>}
-                  {n.type === "api" && <span>replicas: {n.props?.replicas ?? 2}</span>}
-                  {n.type === "lb" && <span>public: true</span>}
+                <div className="p-2 text-[10px] text-muted-foreground space-x-1">
+                  {n.type === "db" && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                      engine: {n.props?.engine ?? "postgres"}
+                    </span>
+                  )}
+                  {n.type === "api" && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-ring/10 text-ring border border-ring/20">
+                      replicas: {n.props?.replicas ?? 2}
+                    </span>
+                  )}
+                  {n.type === "lb" && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
+                      public: true
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
