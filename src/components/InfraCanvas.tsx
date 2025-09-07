@@ -683,7 +683,7 @@ export function InfraCanvas({
               )}
 
               {/* Connections layer (SVG in world coordinates) */}
-              <svg className="absolute inset-0 overflow-visible pointer-events-none z-50 isolate mix-blend-normal">
+              <svg className="absolute inset-0 overflow-visible pointer-events-none z-[999] isolate mix-blend-normal">
                 {/* Arrowhead marker definition for direction cues */}
                 <defs>
                   <marker
@@ -759,28 +759,30 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="black"
-                          strokeWidth={isActive ? 8.5 : 7.5} // increase for stronger depth
+                          strokeWidth={isActive ? 9.5 : 8.5}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-40"
                           fill="none"
                           filter="url(#edgeShadow)"
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* 2) Colored sheath (outer jacket) */}
                         <path
                           d={path}
                           stroke="oklch(var(--ring))"
-                          strokeWidth={isActive ? 8 : 7} // thicker outer shell
+                          strokeWidth={isActive ? 9 : 8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className={isActive ? "opacity-95" : "opacity-85"}
                           fill="none"
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* 3) Main white rope core */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={isActive ? 4.6 : 3.8} // slightly thicker white core
+                          strokeWidth={isActive ? 5.2 : 4.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className={
@@ -791,27 +793,30 @@ export function InfraCanvas({
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter={isActive ? "url(#edgeGlow)" : undefined}
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* 4) Fine braided texture overlay */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={1.1}
+                          strokeWidth={1.3}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
                           fill="none"
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* 5) Subtle sheen highlight */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={isActive ? 1.5 : 1.2}
+                          strokeWidth={isActive ? 1.7 : 1.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-45"
                           fill="none"
                           filter={isActive ? "url(#edgeGlow)" : undefined}
+                          vectorEffect="non-scaling-stroke"
                         />
 
                         {/* Endpoint knot with ring outline + white core */}
@@ -828,8 +833,9 @@ export function InfraCanvas({
                           r={isActive ? 6 : 5.6}
                           fill="none"
                           stroke="oklch(var(--ring))"
-                          strokeWidth={1.4}
+                          strokeWidth={1.6}
                           className="opacity-90"
+                          vectorEffect="non-scaling-stroke"
                         />
                         <circle
                           cx={tx}
@@ -844,8 +850,9 @@ export function InfraCanvas({
                           r={isActive ? 6 : 5.6}
                           fill="none"
                           stroke="oklch(var(--ring))"
-                          strokeWidth={1.4}
+                          strokeWidth={1.6}
                           className="opacity-90"
+                          vectorEffect="non-scaling-stroke"
                         />
 
                         {/* midpoint label with white fill and dark stroke for crispness */}
@@ -855,11 +862,11 @@ export function InfraCanvas({
                             y={0}
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="13"
+                            fontSize="14"
                             fontWeight={800}
                             fill="oklch(var(--foreground))"
                             stroke="black"
-                            strokeWidth={2}
+                            strokeWidth={2.2}
                             paintOrder="stroke"
                           >
                             linked
@@ -895,59 +902,64 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="black"
-                          strokeWidth={7.5}
+                          strokeWidth={8.5}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-40"
                           fill="none"
                           filter="url(#edgeShadow)"
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* preview outer sheath */}
                         <path
                           d={path}
                           stroke="oklch(var(--ring))"
-                          strokeWidth={7}
+                          strokeWidth={8}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-90"
                           fill="none"
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* preview main white core */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
-                          strokeWidth={3.8}
+                          strokeWidth={4.4}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className="opacity-100 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]"
                           fill="none"
                           markerEnd="url(#arrowhead)"
                           filter="url(#edgeGlow)"
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* preview braided texture */}
-                        <path
-                          d={path}
-                          stroke="oklch(var(--foreground))"
-                          strokeWidth={1.05}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
-                          fill="none"
-                        />
-                        {/* preview sheen */}
                         <path
                           d={path}
                           stroke="oklch(var(--foreground))"
                           strokeWidth={1.2}
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          className="[stroke-dasharray:1.5_4] animate-[dash_1.4s_linear_infinite] opacity-70"
+                          fill="none"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                        {/* preview sheen */}
+                        <path
+                          d={path}
+                          stroke="oklch(var(--foreground))"
+                          strokeWidth={1.35}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                           className="opacity-45"
                           fill="none"
                           filter="url(#edgeGlow)"
+                          vectorEffect="non-scaling-stroke"
                         />
                         {/* preview source knot with outline */}
                         <circle cx={sx} cy={sy} r="4.6" fill="oklch(var(--foreground))" className="opacity-100" />
-                        <circle cx={sx} cy={sy} r="6" fill="none" stroke="oklch(var(--ring))" strokeWidth={1.4} className="opacity-90" />
+                        <circle cx={sx} cy={sy} r="6" fill="none" stroke="oklch(var(--ring))" strokeWidth={1.6} className="opacity-90" vectorEffect="non-scaling-stroke" />
 
                         {/* "linking…" label, white with dark stroke */}
                         <g transform={`translate(${mx}, ${my - 8})`}>
@@ -956,11 +968,11 @@ export function InfraCanvas({
                             y={0}
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="13"
+                            fontSize="14"
                             fontWeight={800}
                             fill="oklch(var(--foreground))"
                             stroke="black"
-                            strokeWidth={2}
+                            strokeWidth={2.2}
                             paintOrder="stroke"
                           >
                             linking…
