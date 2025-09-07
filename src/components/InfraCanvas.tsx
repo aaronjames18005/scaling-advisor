@@ -397,6 +397,8 @@ export function InfraCanvas({
     return () => window.removeEventListener("keydown", onKeyDown as any);
   }, [selectedId]);
 
+  const isDragging = draggingId !== null;
+
   return (
     <div className="space-y-4">
       <Card className="glass">
@@ -534,8 +536,10 @@ export function InfraCanvas({
                 willChange: "transform",
               }}
             >
-              {/* background grid */}
-              <div className="absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
+              {/* background grid with adaptive opacity on interactions */}
+              <div
+                className={`absolute inset-0 pointer-events-none [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:24px_24px] ${isDragging || isPanning ? "opacity-30" : "opacity-20"} [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]`}
+              />
               {/* drop hint */}
               {isDragOver && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -573,6 +577,8 @@ export function InfraCanvas({
                   }}
                   title={`${labelForType(n.type)} • Drag to move`}
                   aria-label={`${labelForType(n.type)} node`}
+                  aria-selected={selectedId === n.id}
+                  role="button"
                   tabIndex={0}
                 >
                   {/* Inline delete button to quickly remove nodes */}
@@ -626,6 +632,12 @@ export function InfraCanvas({
             {isPanning && (
               <div className="pointer-events-none absolute top-2 left-2 px-2 py-1 rounded-md border bg-card/80 text-[11px] shadow-sm backdrop-blur">
                 Panning…
+              </div>
+            )}
+
+            {isDragging && (
+              <div className="pointer-events-none absolute top-2 left-24 px-2 py-1 rounded-md border bg-card/80 text-[11px] shadow-sm backdrop-blur">
+                Dragging…
               </div>
             )}
 
