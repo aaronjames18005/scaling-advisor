@@ -57,6 +57,90 @@ export const generate = mutation({
   },
 });
 
+export const generateFromCanvas = mutation({
+  args: {
+    projectId: v.id("projects"),
+    nodes: v.array(
+      v.object({
+        id: v.string(),
+        type: v.union(v.literal("db"), v.literal("lb"), v.literal("api")),
+        x: v.number(),
+        y: v.number(),
+        props: v.optional(
+          v.object({
+            engine: v.optional(v.string()),
+            replicas: v.optional(v.number()),
+          })
+        ),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const user = await getCurrentUser(ctx);
+      if (!user) {
+        throw new Error("Unauthorized: User must be authenticated");
+      }
+      const project = await ctx.db.get(args.projectId);
+      if (!project || project.userId !== user._id) {
+        throw new Error("Project not found or access denied");
+      }
+
+      const tf = generateTerraformFromCanvas(project, args.nodes as any);
+      const k8s = generateK8sFromCanvas(project, args.nodes as any);
+
+      // Upsert Terraform
+      const existingTf = await ctx.db
+        .query("configurations")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .filter((q) => q.eq(q.field("type"), "terraform"))
+        .first();
+
+      if (existingTf) {
+        await ctx.db.patch(existingTf._id, {
+          name: tf.name,
+          content: tf.content,
+          description: tf.description,
+        });
+      } else {
+        await ctx.db.insert("configurations", {
+          projectId: args.projectId,
+          type: "terraform",
+          name: tf.name,
+          content: tf.content,
+          description: tf.description,
+        });
+      }
+
+      // Upsert Kubernetes
+      const existingK8s = await ctx.db
+        .query("configurations")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .filter((q) => q.eq(q.field("type"), "kubernetes"))
+        .first();
+
+      if (existingK8s) {
+        await ctx.db.patch(existingK8s._id, {
+          name: k8s.name,
+          content: k8s.content,
+          description: k8s.description,
+        });
+      } else {
+        await ctx.db.insert("configurations", {
+          projectId: args.projectId,
+          type: "kubernetes",
+          name: k8s.name,
+          content: k8s.content,
+          description: k8s.description,
+        });
+      }
+    } catch (err) {
+      console.error("configurations.generateFromCanvas error", { args, err });
+      throw new Error("Failed to generate configurations from canvas.");
+    }
+  },
+});
+
 export const listByProject = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
@@ -811,5 +895,152 @@ networks:
     name: "docker-compose.yml",
     content,
     description: `Docker Compose configuration for ${project.name}`,
+  };
+}
+
+function generateTerraformFromCanvas(project: any, nodes: Array<any>) {
+  const slug = project.name.toLowerCase().replace(/\s+/g, "-");
+  const hasLB = nodes.some((n) => n.type === "lb");
+  const hasAPI = nodes.some((n) => n.type === "api");
+  const dbNode = nodes.find((n) => n.type === "db");
+  const dbEngine = dbNode?.props?.engine === "mysql" ? "mysql" : "postgres";
+
+  const dbResource =
+    dbEngine === "postgres"
+      ? `# RDS Postgres (example scaffold)
+resource "aws_db_instance" "app" {
+  identifier = "${slug}-db"
+  engine = "postgres"
+  engine_version = "15.4"
+  instance_class = "db.t3.micro"
+  allocated_storage = 20
+  username = "postgres"
+  password = "change-me"
+  skip_final_snapshot = true
+  publicly_accessible = false
+  vpc_security_group_ids = [aws_security_group.app.id]
+  tags = { Name = "${slug}-db" }
+}
+`
+      : `# RDS MySQL (example scaffold)
+resource "aws_db_instance" "app" {
+  identifier = "${slug}-db"
+  engine = "mysql"
+  engine_version = "8.0"
+  instance_class = "db.t3.micro"
+  allocated_storage = 20
+  username = "admin"
+  password = "change-me"
+  skip_final_snapshot = true
+  publicly_accessible = false
+  vpc_security_group_ids = [aws_security_group.app.id]
+  tags = { Name = "${slug}-db" }
+}
+`;
+
+  const lbResource = hasLB
+    ? `# Application Load Balancer
+resource "aws_lb" "main" {
+  name               = "${slug}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.app.id]
+  subnets            = aws_subnet.public[*].id
+  tags = { Name = "${slug}-alb" }
+}
+`
+    : "";
+
+  const apiHint = hasAPI
+    ? `# Hint: Wire your container/orchestrator targets to the ALB listener here`
+    : "";
+
+  const base = generateTerraform(project); // reuse existing scaffold with VPC, SG, etc.
+  const merged = `${base.content}
+
+# -------------------------------------------------------------------
+# Canvas-driven resources
+# -------------------------------------------------------------------
+${dbNode ? dbResource : ""}${lbResource}${apiHint}
+`;
+
+  return {
+    name: "main.tf",
+    content: merged,
+    description: `Terraform (with canvas-driven resources) for ${project.name}`,
+  };
+}
+
+function generateK8sFromCanvas(project: any, nodes: Array<any>) {
+  const slug = project.name.toLowerCase().replace(/\s+/g, "-");
+  const apiNodes = nodes.filter((n) => n.type === "api");
+  const hasLB = nodes.some((n) => n.type === "lb");
+
+  const deployments = apiNodes
+    .map((n, i) => {
+      const replicas = Math.max(1, Math.min(10, Number(n.props?.replicas ?? 2)));
+      return `---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${slug}-api-${i + 1}
+  labels:
+    app: ${slug}-api
+spec:
+  replicas: ${replicas}
+  selector:
+    matchLabels:
+      app: ${slug}-api
+  template:
+    metadata:
+      labels:
+        app: ${slug}-api
+    spec:
+      containers:
+      - name: api
+        image: ${slug}:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+`;
+    })
+    .join("\n");
+
+  const svc = apiNodes.length
+    ? `---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${slug}-api-svc
+spec:
+  selector:
+    app: ${slug}-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ${hasLB ? "LoadBalancer" : "ClusterIP"}`
+    : "";
+
+  const base = generateKubernetes(project);
+  const merged = `${base.content}
+
+# -------------------------------------------------------------------
+# Canvas-driven workloads
+# -------------------------------------------------------------------
+${deployments}
+${svc}
+`;
+
+  return {
+    name: "kubernetes.yaml",
+    content: merged,
+    description: `Kubernetes (with canvas-driven workloads) for ${project.name}`,
   };
 }

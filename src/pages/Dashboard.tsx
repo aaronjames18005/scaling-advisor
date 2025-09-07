@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield } from "lucide-react";
+import InfraCanvas from "@/components/InfraCanvas";
 
 export default function Dashboard() {
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const [viewingProjectId, setViewingProjectId] = useState<string | null>(null);
   const [securityProjectId, setSecurityProjectId] = useState<string | null>(null);
   const [runningSecurityId, setRunningSecurityId] = useState<string | null>(null);
+  const [canvasProjectId, setCanvasProjectId] = useState<string | null>(null);
   const compliance = useQuery(
     api.security.listComplianceByProject,
     securityProjectId ? { projectId: securityProjectId as any } : "skip"
@@ -264,22 +266,14 @@ export default function Dashboard() {
                           <Button 
                             className="flex-1 group-hover:glow-primary"
                             onClick={() => {
-                              setViewingProjectId(project._id);
-                              navigate(`/projects/${project._id}`);
+                              toast.info("Project details view is coming soon.");
                             }}
-                            disabled={viewingProjectId === project._id}
+                            disabled={false}
                           >
-                            {viewingProjectId === project._id ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Opening...
-                              </>
-                            ) : (
-                              <>
-                                View Project
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                              </>
-                            )}
+                            <>
+                              View Project
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </>
                           </Button>
 
                           {/* Security Advisor trigger */}
@@ -392,6 +386,38 @@ export default function Dashboard() {
                                   </div>
                                 )}
                               </div>
+                            </DialogContent>
+                          </Dialog>
+
+                          {/* Infra Canvas trigger */}
+                          <Dialog
+                            open={canvasProjectId === project._id}
+                            onOpenChange={(open) => {
+                              if (!open) setCanvasProjectId(null);
+                              else setCanvasProjectId(project._id);
+                            }}
+                          >
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                onClick={() => setCanvasProjectId(project._id)}
+                              >
+                                Infra Canvas
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>Interactive Infra Canvas</DialogTitle>
+                                <DialogDescription>
+                                  Drag nodes (DB, LB, API) and generate Terraform/K8s config.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <InfraCanvas
+                                projectId={project._id as any}
+                                onGenerated={() => {
+                                  // keep dialog open; user can close manually
+                                }}
+                              />
                             </DialogContent>
                           </Dialog>
 
