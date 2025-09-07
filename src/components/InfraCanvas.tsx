@@ -21,6 +21,12 @@ type CanvasNode = {
   };
 };
 
+type Edge = {
+  id: string;
+  fromId: string;
+  toId: string;
+};
+
 export function InfraCanvas({
   projectId,
   onGenerated,
@@ -41,6 +47,9 @@ export function InfraCanvas({
   const panStart = useRef<{ x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const [connectingFromId, setConnectingFromId] = useState<string | null>(null);
+  const [tempConnectPos, setTempConnectPos] = useState<{ x: number; y: number } | null>(null);
 
   // Drag UI state for palette highlight + drop pulse
   const [draggingType, setDraggingType] = useState<NodeType | null>(null);
@@ -49,6 +58,15 @@ export function InfraCanvas({
   // Safety helpers for numeric operations (avoid NaN/Infinity)
   const clampZoom = (z: number) => Math.min(2, Math.max(0.9, Number.isFinite(z) ? z : 1)); // tighten zoom bounds for better proportions
   const safeNum = (n: number, fallback = 0) => (Number.isFinite(n) ? n : fallback);
+
+  // Helper: estimate node width based on breakpoints for anchoring lines
+  const estimateNodeWidth = () => {
+    const w = typeof window !== "undefined" ? window.innerWidth : 1024;
+    if (w >= 1024) return 144; // md:w-36
+    if (w >= 640) return 128;  // sm:w-32
+    return 112;                // w-28
+  };
+  const estimateNodeHeight = () => 72; // approximate; good enough for anchors
 
   useEffect(() => {
     // Ensure we don't end up with invalid pan/zoom after re-renders
@@ -178,6 +196,14 @@ export function InfraCanvas({
     if (!canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
 
+    // Update temp connection position if drawing an edge
+    if (connectingFromId) {
+      const localX = (e.clientX - rect.left - pan.x) / zoom;
+      const localY = (e.clientY - rect.top - pan.y) / zoom;
+      setTempConnectPos({ x: Math.max(0, Math.floor(safeNum(localX, 0))), y: Math.max(0, Math.floor(safeNum(localY, 0))) });
+      // don't return; allow node dragging if user started a drag on node instead of handle
+    }
+
     // Panning
     if (isPanning && panStart.current) {
       try {
@@ -215,6 +241,11 @@ export function InfraCanvas({
     setDraggingId(null);
     setIsPanning(false);
     panStart.current = null;
+    // Cancel connection if released on empty canvas
+    if (connectingFromId) {
+      setConnectingFromId(null);
+      setTempConnectPos(null);
+    }
   };
 
   const onDragStartPalette = (e: React.DragEvent<HTMLDivElement>, type: NodeType) => {
@@ -260,6 +291,16 @@ export function InfraCanvas({
     setDraggingType(null);
     // Auto-clear pulse after animation
     setTimeout(() => setDropPulse((p) => (p && p.key === (dropPulse?.key ?? 0) ? null : p)), 520);
+  };
+
+  // Connect two nodes
+  const tryConnectNodes = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    // prevent duplicate (undirected-like) edges
+    const exists = edges.some((e) => (e.fromId === fromId && e.toId === toId) || (e.fromId === toId && e.toId === fromId));
+    if (exists) return;
+    const id = `edge-${Math.random().toString(36).slice(2, 8)}`;
+    setEdges((prev) => [...prev, { id, fromId, toId }]);
   };
 
   // Wheel zoom (Ctrl/Cmd + wheel)
@@ -629,10 +670,64 @@ export function InfraCanvas({
                 </>
               )}
 
+              {/* Connections layer (SVG in world coordinates) */}
+              <svg className="absolute inset-0 overflow-visible pointer-events-none">
+                {
+                  edges.map((edge) => {
+                    const from = nodes.find((n) => n.id === edge.fromId);
+                    const to = nodes.find((n) => n.id === edge.toId);
+                    if (!from || !to) return null;
+
+                    const W = estimateNodeWidth();
+                    const H = estimateNodeHeight();
+
+                    // anchor from: right middle of source, to: left middle of target
+                    const sx = from.x + W;
+                    const sy = from.y + H / 2;
+                    const tx = to.x;
+                    const ty = to.y + H / 2;
+
+                    const dx = Math.max(24, Math.abs(tx - sx) * 0.3);
+                    const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx} ${ty}`;
+
+                    return (
+                      <g key={edge.id} className="pointer-events-none">
+                        <path d={path} stroke="hsl(var(--ring))" strokeWidth="3" className="opacity-60" fill="none" />
+                        <path d={path} stroke="hsl(var(--primary))" strokeWidth="1.5" className="opacity-60 [stroke-dasharray:6_6] animate-[dash_1.2s_linear_infinite]" fill="none" />
+                        {/* arrow head */}
+                        <circle cx={tx} cy={ty} r="2.5" fill="hsl(var(--primary))" className="opacity-80" />
+                      </g>
+                    );
+                  })
+                }
+
+                {/* Temp connection preview */}
+                {
+                  connectingFromId && tempConnectPos && (() => {
+                    const from = nodes.find((n) => n.id === connectingFromId);
+                    if (!from) return null;
+                    const W = estimateNodeWidth();
+                    const H = estimateNodeHeight();
+                    const sx = from.x + W;
+                    const sy = from.y + H / 2;
+                    const tx = tempConnectPos.x;
+                    const ty = tempConnectPos.y;
+                    const dx = Math.max(24, Math.abs(tx - sx) * 0.3);
+                    const path = `M ${sx} ${sy} C ${sx + dx} ${sy}, ${tx - dx} ${ty}, ${tx} ${ty}`;
+                    return (
+                      <g className="pointer-events-none">
+                        <path d={path} stroke="hsl(var(--primary))" strokeWidth="2" className="opacity-70 [stroke-dasharray:4_6] animate-[dash_0.8s_linear_infinite]" fill="none" />
+                      </g>
+                    );
+                  })()
+                }
+              </svg>
+
               {nodes.map((n) => (
                 <motion.div
                   key={n.id}
                   data-node
+                  data-node-id={n.id}
                   draggable={false}
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -706,6 +801,43 @@ export function InfraCanvas({
                       </span>
                     )}
                   </div>
+
+                  {/* Connection handle (bottom-center) */}
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-5 w-5 rounded-full border bg-background/80 shadow-sm flex items-center justify-center cursor-crosshair hover:bg-primary/10 hover:border-primary/50"
+                    title="Drag to connect"
+                    role="button"
+                    aria-label="Drag to connect to another node"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setConnectingFromId(n.id);
+                      setTempConnectPos(null);
+                    }}
+                    onMouseUp={(e) => {
+                      // releasing on same handle cancels
+                      e.stopPropagation();
+                      if (connectingFromId) {
+                        setConnectingFromId(null);
+                        setTempConnectPos(null);
+                      }
+                    }}
+                  >
+                    <span className="block h-1.5 w-1.5 rounded-full bg-primary" />
+                  </div>
+
+                  {/* Allow connecting by dropping onto a node */}
+                  <div
+                    className="absolute inset-0"
+                    onMouseUp={(e) => {
+                      e.stopPropagation();
+                      if (connectingFromId && connectingFromId !== n.id) {
+                        tryConnectNodes(connectingFromId, n.id);
+                      }
+                      setConnectingFromId(null);
+                      setTempConnectPos(null);
+                    }}
+                  />
                 </motion.div>
               ))}
             </div>
