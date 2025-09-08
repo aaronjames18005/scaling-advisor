@@ -291,22 +291,22 @@ export default function Dashboard() {
                                 </>
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
+                            <DialogContent className="max-w-3xl glass gradient-primary/30 glow-primary border-border/60">
                               <DialogHeader>
-                                <DialogTitle>Project Details</DialogTitle>
-                                <DialogDescription>
+                                <DialogTitle className="text-xl">Project Details</DialogTitle>
+                                <DialogDescription className="text-muted-foreground">
                                   View project information and manage generated configurations.
                                 </DialogDescription>
                               </DialogHeader>
 
-                              <Tabs defaultValue="overview" className="mt-2">
-                                <TabsList>
-                                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                                  <TabsTrigger value="configs">Configurations</TabsTrigger>
+                              <Tabs defaultValue="overview" className="mt-2 animate-in fade-in-0">
+                                <TabsList className="shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur">
+                                  <TabsTrigger className="px-3 py-1.5" value="overview">Overview</TabsTrigger>
+                                  <TabsTrigger className="px-3 py-1.5" value="configs">Configurations</TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="overview" className="mt-4">
-                                  <div className="space-y-3">
+                                  <div className="space-y-3 bg-card/60 border rounded-md p-4">
                                     <div className="flex items-center justify-between text-sm">
                                       <span className="text-muted-foreground">Name</span>
                                       <span className="font-medium">{project.name}</span>
@@ -327,7 +327,7 @@ export default function Dashboard() {
                                     </div>
                                     <div className="text-sm">
                                       <div className="text-muted-foreground mb-1">Description</div>
-                                      <div className="rounded-md border bg-card/60 p-3">
+                                      <div className="rounded-md border bg-background p-3">
                                         {project.description || "No description provided."}
                                       </div>
                                     </div>
@@ -336,7 +336,7 @@ export default function Dashboard() {
 
                                 <TabsContent value="configs" className="mt-4">
                                   <div className="space-y-4">
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-2 bg-card/60 border rounded-md p-3">
                                       {[
                                         "dockerfile",
                                         "kubernetes",
@@ -409,7 +409,7 @@ export default function Dashboard() {
                                               </Button>
                                             </div>
                                             <details className="group">
-                                              <summary className="cursor-pointer text-sm text-primary">
+                                              <summary className="cursor-pointer text-sm text-primary hover:underline">
                                                 View content
                                               </summary>
                                               <pre className="mt-2 max-h-72 overflow-auto rounded-md border bg-background p-3 text-xs">
