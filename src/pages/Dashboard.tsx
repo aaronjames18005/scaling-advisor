@@ -672,7 +672,10 @@ export default function Dashboard() {
                                       setConfirmDeleteText("");
                                     }
                                   }}
-                                  disabled={deletingId === project._id || confirmDeleteText !== "DELETE"}
+                                  disabled={
+                                    deletingId === project._id ||
+                                    confirmDeleteText.trim().toUpperCase() !== "DELETE"
+                                  }
                                 >
                                   {deletingId === project._id ? (
                                     <>
