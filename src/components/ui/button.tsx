@@ -40,19 +40,42 @@ function Button({
   variant,
   size,
   asChild = false,
+  loading = false,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    loading?: boolean
   }) {
   const Comp = asChild ? Slot : "button"
+
+  const { children, disabled, ...rest } = props as any
+  const isDisabled = Boolean(disabled || loading)
 
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
+      aria-busy={loading || undefined}
+      data-loading={loading ? "" : undefined}
+      disabled={isDisabled}
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        loading ? "cursor-wait" : ""
+      )}
+      {...rest}
+    >
+      {loading && (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="size-4 animate-spin text-current/70"
+        >
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="4" fill="none" />
+          <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none" />
+        </svg>
+      )}
+      {children}
+    </Comp>
   )
 }
 
