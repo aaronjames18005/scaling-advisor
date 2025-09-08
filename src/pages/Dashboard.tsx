@@ -249,7 +249,7 @@ export default function Dashboard() {
                   setNavCreatingSection(true);
                   navigate("/projects/new");
                 }}
-                className="glow-primary w-full sm:w-auto shadow-lg"
+                className="hidden"
                 disabled={navCreatingSection}
               >
                 {navCreatingSection ? (
@@ -688,6 +688,26 @@ export default function Dashboard() {
             </div>
           )}
         </motion.div>
+      </div>
+
+      {/* Floating New Project Button (visible on all screens) */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          className="glow-primary shadow-2xl"
+          size="icon"
+          aria-label="Create a new project"
+          onClick={() => {
+            setNavCreatingSection(true);
+            navigate("/projects/new");
+          }}
+          disabled={navCreatingSection}
+        >
+          {navCreatingSection ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Plus className="h-5 w-5" />
+          )}
+        </Button>
       </div>
     </div>
   );
