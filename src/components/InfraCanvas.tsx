@@ -1095,8 +1095,14 @@ export function InfraCanvas({
                       if (connectingFromId && connectingFromId !== n.id) {
                         tryConnectNodes(connectingFromId, n.id);
                       }
-                      setConnectingFromId(null);
-                      setTempConnectPos(null);
+                      // If Shift is held, keep the source active to allow chaining multiple connections
+                      if (e.shiftKey) {
+                        // preserve connectingFromId to continue linking; reset preview until mouse moves
+                        setTempConnectPos(null);
+                      } else {
+                        setConnectingFromId(null);
+                        setTempConnectPos(null);
+                      }
                     }}
                   />
                 </motion.div>
