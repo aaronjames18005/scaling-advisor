@@ -43,6 +43,7 @@ export default function Dashboard() {
   const [runningSecurityId, setRunningSecurityId] = useState<string | null>(null);
   const [canvasProjectId, setCanvasProjectId] = useState<string | null>(null);
   const [generatingType, setGeneratingType] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Load configurations for the currently viewed project (modal)
   const configs = useQuery(
@@ -74,6 +75,17 @@ export default function Dashboard() {
 
   const activeProjects = projects?.filter(p => p.status === "active") || [];
   const completedProjects = projects?.filter(p => p.status === "completed") || [];
+
+  const filteredProjects = (projects || []).filter((p) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (p.name || "").toLowerCase().includes(q) ||
+      (p.description || "").toLowerCase().includes(q) ||
+      (p.techStack || "").toLowerCase().includes(q) ||
+      (p.status || "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -205,31 +217,39 @@ export default function Dashboard() {
         >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold tracking-tight">Your Projects</h2>
-            <Button
-              onClick={() => {
-                setNavCreatingSection(true);
-                navigate("/projects/new");
-              }}
-              variant="outline"
-              disabled={navCreatingSection}
-            >
-              {navCreatingSection ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Opening...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Project
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search projects..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-[180px] sm:w-[240px]"
+              />
+              <Button
+                onClick={() => {
+                  setNavCreatingSection(true);
+                  navigate("/projects/new");
+                }}
+                variant="outline"
+                disabled={navCreatingSection}
+              >
+                {navCreatingSection ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Opening...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Project
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
-          {projects !== undefined && projects.length > 0 && (
+          {filteredProjects !== undefined && filteredProjects.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project, index) => (
+              {filteredProjects.map((project, index) => (
                 <motion.div
                   key={project._id}
                   initial={{ y: 20, opacity: 0 }}
