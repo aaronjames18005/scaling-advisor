@@ -25,6 +25,8 @@ import { Label } from "@/components/ui/label";
 import { Shield } from "lucide-react";
 import InfraCanvas from "@/components/InfraCanvas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 export default function Dashboard() {
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
@@ -141,6 +143,59 @@ export default function Dashboard() {
                   <Plus className="h-4 w-4" />
                 )}
               </Button>
+
+              {/* Mobile menu (sheet) */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="md:hidden"
+                    aria-label="Open menu"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[85vw] sm:w-80">
+                  <div className="flex flex-col gap-3 mt-6">
+                    <div className="text-sm text-muted-foreground">
+                      {user?.name ? `Signed in as ${user.name}` : "Signed in"}
+                    </div>
+                    <Button
+                      className="glow-primary"
+                      onClick={() => {
+                        setNavCreatingTop(true);
+                        navigate("/projects/new");
+                      }}
+                      disabled={navCreatingTop}
+                    >
+                      {navCreatingTop ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Opening...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          New Project
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/")}
+                    >
+                      Home
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      Dashboard
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
