@@ -693,7 +693,7 @@ export default function Dashboard() {
       {/* Floating New Project Button (visible on all screens) */}
       <div className="fixed bottom-6 right-6 z-50">
         <Button
-          className="glow-primary shadow-2xl"
+          className="glow-primary shadow-2xl h-14 w-14 rounded-full"
           size="icon"
           aria-label="Create a new project"
           onClick={() => {
@@ -703,9 +703,9 @@ export default function Dashboard() {
           disabled={navCreatingSection}
         >
           {navCreatingSection ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-7 w-7 animate-spin" />
           ) : (
-            <Plus className="h-5 w-5" />
+            <Plus className="h-7 w-7" />
           )}
         </Button>
       </div>
