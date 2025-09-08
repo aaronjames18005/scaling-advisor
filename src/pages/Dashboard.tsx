@@ -352,18 +352,22 @@ export default function Dashboard() {
                                 onValueChange={(v) => setProjectTab(v as "overview" | "configs")}
                                 className="mt-2 animate-in fade-in-0"
                               >
-                                <TabsList className="relative shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur grid grid-cols-2 gap-2">
-                                  {/* Animated slider indicator */}
+                                <TabsList className="relative shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur grid grid-cols-2">
                                   <div
-                                    className={`absolute top-1 bottom-1 left-1 rounded-md bg-primary/10 transition-transform duration-200
-                                      ${projectTab === "configs"
-                                        ? "translate-x-[calc(100%+0.5rem)] w-[calc(50%-0.75rem)]"
-                                        : "translate-x-0 w-[calc(50%-0.75rem)]"}`}
+                                    className={`absolute top-1 bottom-1 left-1 w-1/2 rounded-md bg-primary/10 transition-transform duration-200 ${
+                                      projectTab === "configs" ? "translate-x-full" : "translate-x-0"
+                                    }`}
                                   />
-                                  <TabsTrigger className="px-3 py-1.5 w-full relative z-10" value="overview">
+                                  <TabsTrigger
+                                    className="px-3 py-1.5 w-full relative z-10 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                                    value="overview"
+                                  >
                                     Overview
                                   </TabsTrigger>
-                                  <TabsTrigger className="px-3 py-1.5 w-full relative z-10" value="configs">
+                                  <TabsTrigger
+                                    className="px-3 py-1.5 w-full relative z-10 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                                    value="configs"
+                                  >
                                     Configurations
                                   </TabsTrigger>
                                 </TabsList>
