@@ -187,7 +187,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   {(emailTouched && email && !isValidEmail(email)) && (
                     <p
                       id="email-error"
-                      className="mt-2 text-xs text-destructive"
+                      className="mt-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded px-2.5 py-1.5"
                       role="alert"
                       aria-live="polite"
                     >
@@ -196,7 +196,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   )}
                   {error && step === "signIn" && (
                     <div className="mt-3" role="alert" aria-live="polite">
-                      <Alert variant="destructive">
+                      <Alert variant="destructive" className="border-destructive/50 bg-destructive/10 text-destructive-foreground">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
@@ -271,7 +271,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   {otpTouched && otp.length !== 6 && !error && (
                     <p
                       id="otp-error"
-                      className="mt-2 text-xs text-destructive text-center"
+                      className="mt-2 text-xs text-destructive text-center bg-destructive/10 border border-destructive/20 rounded px-2.5 py-1.5"
                       role="alert"
                       aria-live="polite"
                     >
@@ -280,7 +280,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   )}
                   {error && (
                     <div className="mt-3" role="alert" aria-live="polite">
-                      <Alert variant="destructive">
+                      <Alert variant="destructive" className="border-destructive/50 bg-destructive/10 text-destructive-foreground">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription className="text-center">{error}</AlertDescription>
