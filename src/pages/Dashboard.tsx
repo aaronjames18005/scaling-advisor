@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [canvasProjectId, setCanvasProjectId] = useState<string | null>(null);
   const [generatingType, setGeneratingType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [projectTab, setProjectTab] = useState<"overview" | "configs">("overview");
 
   // Load configurations for the currently viewed project (modal)
   const configs = useQuery(
@@ -316,8 +317,13 @@ export default function Dashboard() {
                           <Dialog
                             open={viewingProjectId === project._id}
                             onOpenChange={(open) => {
-                              if (!open) setViewingProjectId(null);
-                              else setViewingProjectId(project._id);
+                              if (!open) {
+                                setViewingProjectId(null);
+                                // Reset tab to Overview when modal closes
+                                setProjectTab("overview");
+                              } else {
+                                setViewingProjectId(project._id);
+                              }
                             }}
                           >
                             <DialogTrigger asChild>
@@ -341,10 +347,25 @@ export default function Dashboard() {
                                 </DialogDescription>
                               </DialogHeader>
 
-                              <Tabs defaultValue="overview" className="mt-2 animate-in fade-in-0">
-                                <TabsList className="shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur overflow-x-auto whitespace-nowrap">
-                                  <TabsTrigger className="px-3 py-1.5" value="overview">Overview</TabsTrigger>
-                                  <TabsTrigger className="px-3 py-1.5" value="configs">Configurations</TabsTrigger>
+                              <Tabs
+                                value={projectTab}
+                                onValueChange={(v) => setProjectTab(v as "overview" | "configs")}
+                                className="mt-2 animate-in fade-in-0"
+                              >
+                                <TabsList className="relative shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur grid grid-cols-2 gap-2">
+                                  {/* Animated slider indicator */}
+                                  <div
+                                    className={`absolute top-1 bottom-1 left-1 rounded-md bg-primary/10 transition-transform duration-200
+                                      ${projectTab === "configs"
+                                        ? "translate-x-[calc(100%+0.5rem)] w-[calc(50%-0.75rem)]"
+                                        : "translate-x-0 w-[calc(50%-0.75rem)]"}`}
+                                  />
+                                  <TabsTrigger className="px-3 py-1.5 w-full relative z-10" value="overview">
+                                    Overview
+                                  </TabsTrigger>
+                                  <TabsTrigger className="px-3 py-1.5 w-full relative z-10" value="configs">
+                                    Configurations
+                                  </TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="overview" className="mt-4">
