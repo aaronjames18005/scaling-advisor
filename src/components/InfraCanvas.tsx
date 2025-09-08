@@ -782,6 +782,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
+                          strokeOpacity={1}
                           strokeWidth={isActive ? 2.6 : 2.2} // increased core
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -795,6 +796,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
+                          strokeOpacity={1}
                           strokeWidth={0.7} // slightly thicker texture
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -806,6 +808,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
+                          strokeOpacity={1}
                           strokeWidth={isActive ? 0.9 : 0.8} // slightly thicker sheen
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -903,6 +906,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
+                          strokeOpacity={1}
                           strokeWidth={2.2} // increased preview core
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -916,6 +920,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
+                          strokeOpacity={1}
                           strokeWidth={0.7} // increased preview texture
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -927,6 +932,7 @@ export function InfraCanvas({
                         <path
                           d={path}
                           stroke="#ffffff"
+                          strokeOpacity={1}
                           strokeWidth={0.75} // increased preview sheen
                           strokeLinecap="round"
                           strokeLinejoin="round"
