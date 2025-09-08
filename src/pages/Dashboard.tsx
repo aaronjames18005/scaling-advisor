@@ -165,7 +165,7 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28">
         {/* Header */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -483,6 +483,7 @@ export default function Dashboard() {
                                 aria-label="Security Advisor"
                                 onClick={() => setSecurityProjectId(project._id)}
                                 disabled={runningSecurityId === project._id}
+                                className="h-10 w-10"
                               >
                                 {runningSecurityId === project._id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -623,7 +624,7 @@ export default function Dashboard() {
                               <Button 
                                 variant="outline" 
                                 size="icon" 
-                                className="shrink-0"
+                                className="shrink-0 h-10 w-10"
                                 aria-label="Delete project"
                                 onClick={() => setConfirmDeleteText("")}
                               >
@@ -697,7 +698,7 @@ export default function Dashboard() {
       </div>
 
       {/* Floating New Project Button (visible on all screens) */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 z-50">
         <Button
           className="glow-primary shadow-2xl h-14 w-14 rounded-xl"
           size="icon"
