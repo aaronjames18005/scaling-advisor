@@ -352,20 +352,20 @@ export default function Dashboard() {
                                 onValueChange={(v) => setProjectTab(v as "overview" | "configs")}
                                 className="mt-2 animate-in fade-in-0"
                               >
-                                <TabsList className="relative shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur grid grid-cols-2">
+                                <TabsList className="relative overflow-hidden shadow-inner border rounded-lg bg-background/70 backdrop-blur grid grid-cols-2">
                                   <div
-                                    className={`absolute top-1 bottom-1 left-1 w-1/2 rounded-md bg-primary/10 transition-transform duration-200 ${
+                                    className={`absolute top-0 bottom-0 left-0 w-1/2 rounded-md bg-primary/10 transition-transform duration-200 ${
                                       projectTab === "configs" ? "translate-x-full" : "translate-x-0"
                                     }`}
                                   />
                                   <TabsTrigger
-                                    className="px-3 py-1.5 w-full relative z-10 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                                    className="px-3 py-2 w-full relative z-10 data-[state=active]:text-primary data-[state=active]:font-semibold"
                                     value="overview"
                                   >
                                     Overview
                                   </TabsTrigger>
                                   <TabsTrigger
-                                    className="px-3 py-1.5 w-full relative z-10 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                                    className="px-3 py-2 w-full relative z-10 data-[state=active]:text-primary data-[state=active]:font-semibold"
                                     value="configs"
                                   >
                                     Configurations
