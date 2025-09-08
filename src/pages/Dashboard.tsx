@@ -693,7 +693,7 @@ export default function Dashboard() {
       {/* Floating New Project Button (visible on all screens) */}
       <div className="fixed bottom-6 right-6 z-50">
         <Button
-          className="glow-primary shadow-2xl h-14 w-14 rounded-full"
+          className="glow-primary shadow-2xl h-14 w-14 rounded-xl"
           size="icon"
           aria-label="Create a new project"
           onClick={() => {
