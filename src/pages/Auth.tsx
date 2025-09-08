@@ -30,6 +30,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const navigate = useNavigate();
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
   const [otp, setOtp] = useState("");
+  const [otpTouched, setOtpTouched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -78,6 +79,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    setOtpTouched(true);
 
     if (otp.trim().length !== 6) {
       setError("Please enter the 6-digit verification code.");
@@ -156,6 +158,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         name="email"
                         placeholder="name@example.com"
                         type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        spellCheck={false}
                         className={`pl-9 ${emailTouched && email && !isValidEmail(email) ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={isLoading}
                         required
@@ -246,13 +251,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       disabled={isLoading}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && otp.length === 6 && !isLoading) {
-                          // Find the closest form and submit it
                           const form = (e.target as HTMLElement).closest("form");
                           if (form) {
                             form.requestSubmit();
                           }
                         }
                       }}
+                      aria-invalid={otpTouched && otp.length !== 6}
+                      aria-describedby="otp-error"
+                      onBlur={() => setOtpTouched(true)}
                     >
                       <InputOTPGroup>
                         {Array.from({ length: 6 }).map((_, index) => (
@@ -261,6 +268,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
+                  {otpTouched && otp.length !== 6 && !error && (
+                    <p
+                      id="otp-error"
+                      className="mt-2 text-xs text-destructive text-center"
+                      role="alert"
+                      aria-live="polite"
+                    >
+                      Enter the 6-digit code sent to your email.
+                    </p>
+                  )}
                   {error && (
                     <div className="mt-3" role="alert" aria-live="polite">
                       <Alert variant="destructive">
