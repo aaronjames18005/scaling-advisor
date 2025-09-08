@@ -92,11 +92,11 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="border-b border-border/50 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md backdrop-saturate-150 shadow-lg ring-1 ring-border/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap md:flex-nowrap justify-between items-center gap-3 h-auto md:h-16 py-3 md:py-0">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-md">
                 <Rocket className="h-5 w-5 text-background" />
               </div>
               <span className="text-xl font-bold tracking-tight">ScaleAdvisor</span>
@@ -198,6 +198,8 @@ export default function Dashboard() {
               </Sheet>
             </div>
           </div>
+          {/* Accent bar for visibility */}
+          <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary/90 opacity-90" />
         </div>
       </nav>
 
