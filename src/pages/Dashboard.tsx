@@ -331,7 +331,9 @@ export default function Dashboard() {
                                 </>
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[85vh] overflow-y-auto glass gradient-primary/30 glow-primary border-border/60">
+                            <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[85vh] overflow-y-auto glass gradient-primary/30 glow-primary border-border/60 rounded-xl shadow-xl
+                              data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95
+                              data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-200">
                               <DialogHeader>
                                 <DialogTitle className="text-xl">Project Details</DialogTitle>
                                 <DialogDescription className="text-muted-foreground">
@@ -489,7 +491,9 @@ export default function Dashboard() {
                                 )}
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
+                            <DialogContent className="max-w-2xl glass gradient-primary/20 glow-primary border-border/60 rounded-xl shadow-xl
+                              data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95
+                              data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-200">
                               <DialogHeader>
                                 <DialogTitle>Security Advisor</DialogTitle>
                                 <DialogDescription>
@@ -595,7 +599,9 @@ export default function Dashboard() {
                                 Infra Canvas
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="w-[95vw] sm:w-auto max-w-4xl max-h-[85vh] overflow-y-auto">
+                            <DialogContent className="w-[95vw] sm:w-auto max-w-4xl max-h-[85vh] overflow-y-auto glass gradient-accent/20 glow-primary border-border/60 rounded-xl shadow-xl
+                              data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95
+                              data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-200">
                               <DialogHeader>
                                 <DialogTitle>Interactive Infra Canvas</DialogTitle>
                                 <DialogDescription>
