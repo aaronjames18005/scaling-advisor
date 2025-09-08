@@ -106,44 +106,6 @@ export default function Dashboard() {
               <span className="hidden md:inline text-sm text-muted-foreground">
                 Welcome back, {user?.name || "Developer"}
               </span>
-              {/* Desktop/Tablet CTA */}
-              <Button
-                onClick={() => {
-                  setNavCreatingTop(true);
-                  navigate("/projects/new");
-                }}
-                className="glow-primary hidden md:inline-flex"
-                disabled={navCreatingTop}
-              >
-                {navCreatingTop ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Opening...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Project
-                  </>
-                )}
-              </Button>
-              {/* Mobile CTA (icon only) */}
-              <Button
-                onClick={() => {
-                  setNavCreatingTop(true);
-                  navigate("/projects/new");
-                }}
-                size="icon"
-                className="glow-primary md:hidden"
-                disabled={navCreatingTop}
-              >
-                {navCreatingTop ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-              </Button>
-
               {/* Mobile menu (sheet) */}
               <Sheet>
                 <SheetTrigger asChild>
@@ -287,7 +249,7 @@ export default function Dashboard() {
                   setNavCreatingSection(true);
                   navigate("/projects/new");
                 }}
-                variant="outline"
+                className="glow-primary w-full sm:w-auto shadow-lg"
                 disabled={navCreatingSection}
               >
                 {navCreatingSection ? (
@@ -298,7 +260,7 @@ export default function Dashboard() {
                 ) : (
                   <>
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Project
+                    New Project
                   </>
                 )}
               </Button>
