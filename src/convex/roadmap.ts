@@ -2,6 +2,12 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
+function handleConvexError(op: string, args: Record<string, unknown>, err: unknown, publicMessage: string): never {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`[roadmap:${op}]`, { args, error: message, raw: err });
+  throw new Error(publicMessage);
+}
+
 export const generateForProject = mutation({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
@@ -35,8 +41,7 @@ export const generateForProject = mutation({
         });
       }
     } catch (err) {
-      console.error("roadmap.generateForProject error", { args, err });
-      throw new Error("Failed to generate roadmap.");
+      handleConvexError("generateForProject", args, err, "Failed to generate roadmap.");
     }
   },
 });
@@ -60,8 +65,7 @@ export const listByProject = query({
         .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
         .collect();
     } catch (err) {
-      console.error("roadmap.listByProject error", { args, err });
-      return [];
+      handleConvexError("listByProject", args, err, "Failed to load roadmap steps.");
     }
   },
 });
@@ -89,8 +93,7 @@ export const toggleComplete = mutation({
         isCompleted: !step.isCompleted,
       });
     } catch (err) {
-      console.error("roadmap.toggleComplete error", { args, err });
-      throw new Error("Failed to update roadmap step.");
+      handleConvexError("toggleComplete", args, err, "Failed to update roadmap step.");
     }
   },
 });
