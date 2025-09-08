@@ -215,14 +215,15 @@ export default function Dashboard() {
           transition={{ delay: 0.2 }}
           className="rounded-xl p-6 gradient-accent"
         >
-          <div className="flex justify-between items-center mb-6">
+          {/* Header: responsive layout */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <h2 className="text-2xl font-bold tracking-tight">Your Projects</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full sm:w-auto items-center gap-2">
               <Input
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[180px] sm:w-[240px]"
+                className="w-full sm:w-[240px]"
               />
               <Button
                 onClick={() => {
@@ -292,7 +293,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-4 flex gap-2">
+                        <div className="mt-4 flex flex-wrap gap-2">
                           <Dialog
                             open={viewingProjectId === project._id}
                             onOpenChange={(open) => {
@@ -311,7 +312,7 @@ export default function Dashboard() {
                                 </>
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-3xl glass gradient-primary/30 glow-primary border-border/60">
+                            <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[85vh] overflow-y-auto glass gradient-primary/30 glow-primary border-border/60">
                               <DialogHeader>
                                 <DialogTitle className="text-xl">Project Details</DialogTitle>
                                 <DialogDescription className="text-muted-foreground">
@@ -320,7 +321,7 @@ export default function Dashboard() {
                               </DialogHeader>
 
                               <Tabs defaultValue="overview" className="mt-2 animate-in fade-in-0">
-                                <TabsList className="shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur">
+                                <TabsList className="shadow-inner border rounded-lg p-1 bg-background/70 backdrop-blur overflow-x-auto whitespace-nowrap">
                                   <TabsTrigger className="px-3 py-1.5" value="overview">Overview</TabsTrigger>
                                   <TabsTrigger className="px-3 py-1.5" value="configs">Configurations</TabsTrigger>
                                 </TabsList>
@@ -575,7 +576,7 @@ export default function Dashboard() {
                                 Infra Canvas
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="w-[95vw] sm:w-auto max-w-4xl">
+                            <DialogContent className="w-[95vw] sm:w-auto max-w-4xl max-h-[85vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle>Interactive Infra Canvas</DialogTitle>
                                 <DialogDescription>
