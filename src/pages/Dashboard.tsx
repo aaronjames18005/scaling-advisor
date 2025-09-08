@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield } from "lucide-react";
 import InfraCanvas from "@/components/InfraCanvas";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Dashboard() {
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const projects = useQuery(api.projects.list);
   const removeProject = useMutation(api.projects.remove);
   const runSecurityAdvisor = useMutation(api.security.generateForProject);
+  const generateConfig = useMutation(api.configurations.generate);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteText, setConfirmDeleteText] = useState<string>("");
 
@@ -40,6 +42,14 @@ export default function Dashboard() {
   const [securityProjectId, setSecurityProjectId] = useState<string | null>(null);
   const [runningSecurityId, setRunningSecurityId] = useState<string | null>(null);
   const [canvasProjectId, setCanvasProjectId] = useState<string | null>(null);
+  const [generatingType, setGeneratingType] = useState<string | null>(null);
+
+  // Load configurations for the currently viewed project (modal)
+  const configs = useQuery(
+    api.configurations.listByProject,
+    viewingProjectId ? ({ projectId: viewingProjectId as any } as any) : "skip"
+  );
+
   const compliance = useQuery(
     api.security.listComplianceByProject,
     securityProjectId ? { projectId: securityProjectId as any } : "skip"
@@ -263,18 +273,158 @@ export default function Dashboard() {
 
                         {/* Actions */}
                         <div className="mt-4 flex gap-2">
-                          <Button 
-                            className="flex-1 group-hover:glow-primary"
-                            onClick={() => {
-                              toast.info("Project details view is coming soon.");
+                          <Dialog
+                            open={viewingProjectId === project._id}
+                            onOpenChange={(open) => {
+                              if (!open) setViewingProjectId(null);
+                              else setViewingProjectId(project._id);
                             }}
-                            disabled={false}
                           >
-                            <>
-                              View Project
-                              <ArrowRight className="ml-2 h-4 w-4" />
-                            </>
-                          </Button>
+                            <DialogTrigger asChild>
+                              <Button
+                                className="flex-1 group-hover:glow-primary"
+                                onClick={() => setViewingProjectId(project._id)}
+                              >
+                                <>
+                                  View Project
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </>
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>Project Details</DialogTitle>
+                                <DialogDescription>
+                                  View project information and manage generated configurations.
+                                </DialogDescription>
+                              </DialogHeader>
+
+                              <Tabs defaultValue="overview" className="mt-2">
+                                <TabsList>
+                                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                                  <TabsTrigger value="configs">Configurations</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="overview" className="mt-4">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="text-muted-foreground">Name</span>
+                                      <span className="font-medium">{project.name}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="text-muted-foreground">Status</span>
+                                      <span className="font-medium capitalize">{project.status}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="text-muted-foreground">Tech Stack</span>
+                                      <span className="font-medium capitalize">{project.techStack}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="text-muted-foreground">Phase</span>
+                                      <span className="font-medium capitalize">
+                                        {project.currentPhase} → {project.targetPhase}
+                                      </span>
+                                    </div>
+                                    <div className="text-sm">
+                                      <div className="text-muted-foreground mb-1">Description</div>
+                                      <div className="rounded-md border bg-card/60 p-3">
+                                        {project.description || "No description provided."}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TabsContent>
+
+                                <TabsContent value="configs" className="mt-4">
+                                  <div className="space-y-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      {[
+                                        "dockerfile",
+                                        "kubernetes",
+                                        "terraform",
+                                        "github-actions",
+                                        "docker-compose",
+                                      ].map((type) => (
+                                        <Button
+                                          key={type}
+                                          variant="outline"
+                                          onClick={async () => {
+                                            try {
+                                              setGeneratingType(type);
+                                              await generateConfig({
+                                                projectId: project._id as any,
+                                                type: type as any,
+                                              });
+                                              toast.success(`Generated ${type} configuration`);
+                                            } catch (e) {
+                                              console.error("generate configuration error", e);
+                                              toast.error(`Failed to generate ${type}`);
+                                            } finally {
+                                              setGeneratingType(null);
+                                            }
+                                          }}
+                                          loading={generatingType === type}
+                                          disabled={generatingType !== null && generatingType !== type}
+                                        >
+                                          Generate {type}
+                                        </Button>
+                                      ))}
+                                    </div>
+
+                                    <div className="space-y-3 max-h-[55vh] overflow-auto pr-1">
+                                      {configs === undefined ? (
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                          Loading configurations...
+                                        </div>
+                                      ) : configs.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                          No configurations yet. Generate one above.
+                                        </p>
+                                      ) : (
+                                        configs.map((c: any) => (
+                                          <div
+                                            key={c._id}
+                                            className="rounded-md border bg-card/60 p-3 space-y-2"
+                                          >
+                                            <div className="flex items-center justify-between">
+                                              <div className="space-y-0.5">
+                                                <div className="font-semibold">{c.name}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                  {c.type} • {c.description}
+                                                </div>
+                                              </div>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={async () => {
+                                                  try {
+                                                    await navigator.clipboard.writeText(c.content || "");
+                                                    toast.success("Configuration copied to clipboard");
+                                                  } catch {
+                                                    toast.error("Failed to copy");
+                                                  }
+                                                }}
+                                              >
+                                                Copy
+                                              </Button>
+                                            </div>
+                                            <details className="group">
+                                              <summary className="cursor-pointer text-sm text-primary">
+                                                View content
+                                              </summary>
+                                              <pre className="mt-2 max-h-72 overflow-auto rounded-md border bg-background p-3 text-xs">
+                                                {c.content}
+                                              </pre>
+                                            </details>
+                                          </div>
+                                        ))
+                                      )}
+                                    </div>
+                                  </div>
+                                </TabsContent>
+                              </Tabs>
+                            </DialogContent>
+                          </Dialog>
 
                           {/* Security Advisor trigger */}
                           <Dialog
