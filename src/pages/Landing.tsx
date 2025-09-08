@@ -65,7 +65,7 @@ export default function Landing() {
                   <span className="text-sm text-muted-foreground">
                     Welcome back, {user?.name || "Developer"}
                   </span>
-                  <Button onClick={() => navigate("/dashboard")} className="glow-primary">
+                  <Button onClick={() => navigate("/dashboard")} className="glow-primary transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl">
                     Dashboard
                   </Button>
                   <LogoDropdown />
@@ -112,7 +112,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 onClick={handleGetStarted}
-                className="text-lg px-8 py-6 glow-primary group"
+                className="text-lg px-8 py-6 glow-primary group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
               >
                 {isAuthenticated ? "Go to Dashboard" : "Get Started Free"}
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -120,7 +120,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-8 py-6"
+                className="text-lg px-8 py-6 transition-colors duration-200 hover:bg-primary/10"
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 See How It Works
@@ -248,7 +248,7 @@ export default function Landing() {
             <Button 
               size="lg" 
               onClick={handleGetStarted}
-              className="text-lg px-12 py-6 glow-primary group"
+              className="text-lg px-12 py-6 glow-primary group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
             >
               {isAuthenticated ? "Go to Dashboard" : "Start Scaling Now"}
               <Rocket className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
