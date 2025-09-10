@@ -1,0 +1,11 @@
+# render.yaml
+services:
+  - type: web
+    name: scaling-advisor
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run preview
+    envVars:
+      - key: NODE_VERSION
+        value: 18
